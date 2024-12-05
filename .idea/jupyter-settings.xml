@@ -17,11 +17,8 @@
         <entry key="$PROJECT_DIR$/.idea/NLP.iml">
           <value>
             <JupyterConnectionParameters>
-              <option name="authType" value="notebook" />
-              <option name="urlString" value="http://localhost:8890" />
-              <authParams2>
-                <map />
-              </authParams2>
+              <option name="managed" value="true" />
+              <option name="sdkName" value="" />
             </JupyterConnectionParameters>
           </value>
         </entry>
