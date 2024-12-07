@@ -24,6 +24,7 @@ jobs:
     - name: Run Jupyter Notebooks
       shell: bash
       run: |
+        conda activate DHBW-NLP-CrowdFlow
         for notebook in $(find ./src -name "*.ipynb"); do
           echo "Running $notebook"
           jupyter execute $notebook
