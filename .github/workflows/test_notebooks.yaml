@@ -1,0 +1,32 @@
+name: Test Jupyter Notebooks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test-notebooks:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Miniconda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-update-conda: true
+        environment-file: environment.yml
+        activate-environment: DHBW-NLP-CrowdFlow
+        cache-downloads: true
+        cache-env: true
+
+    - name: Run Jupyter Notebooks
+      shell: bash
+      run: |
+        for notebook in $(find ./src -name "*.ipynb"); do
+          echo "Running $notebook"
+          jupyter execute $notebook
+        done
