@@ -20,8 +20,6 @@ jobs:
         auto-update-conda: true
         environment-file: environment.yml
         activate-environment: DHBW-NLP-CrowdFlow
-        cache-downloads: true
-        cache-env: true
 
     - name: Run Jupyter Notebooks
       shell: bash

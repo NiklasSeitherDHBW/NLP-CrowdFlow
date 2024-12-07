@@ -1,1 +1,1 @@
-conda env export --no-build > environment.yml
+python -m pip list --format=freeze > requirements.txt
