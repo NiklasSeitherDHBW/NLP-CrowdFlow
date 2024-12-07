@@ -14,18 +14,16 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Setup Python
+    - name: Set up Miniconda
       uses: conda-incubator/setup-miniconda@v3
-        with:
-          activate-environment: CrowdFlow
-          environment-file: ./conda-env.yaml
-          auto-activate-base: false
+      with:
+        activate-environment: CrowdFlow  # Replace with the environment name in your YAML file
+        environment-file: ./conda-env.yaml
+        auto-activate-base: false
 
     - name: Run Jupyter Notebooks
       shell: bash
       run: |
-        source $HOME/miniconda/bin/activate
-        conda activate conda-env
         for notebook in $(find ./src -name "*.ipynb"); do
           echo "Running $notebook"
           jupyter nbconvert --to notebook --execute $notebook --output executed-$notebook || exit 1
