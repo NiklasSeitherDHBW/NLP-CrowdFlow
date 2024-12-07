@@ -49,5 +49,5 @@ jobs:
         conda activate DHBW-NLP-CrowdFlow
         for notebook in $(find ./src -name "*.ipynb"); do
           echo "Running $notebook"
-          jupyter nbconvert --to notebook --execute $notebook --output $notebook
+          jupyter execute $notebook
         done
