@@ -24,6 +24,8 @@ jobs:
     - name: Run Jupyter Notebooks
       shell: cmd
       run: |
+        conda activate CrowdFlow
+        
         for /r src %%f in (*.ipynb) do (
           echo Running %%f
           jupyter nbconvert --to notebook --execute %%f --output executed-%%~nf.ipynb || exit /b 1
