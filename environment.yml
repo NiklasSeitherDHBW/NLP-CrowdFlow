@@ -4,7 +4,7 @@ channels:
 dependencies:
   - python==3.11.10
   - matplotlib
-  - nltk==3.8.2
+  - nltk==3.8.1
   - pandas
   - pytorch
   - scikit-learn
