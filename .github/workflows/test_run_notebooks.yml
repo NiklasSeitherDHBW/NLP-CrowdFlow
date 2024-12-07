@@ -1,0 +1,72 @@
+name: Test Run Jupyter Notebooks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test-run-notebooks-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Miniconda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-update-conda: true
+        environment-file: environment.yml
+        activate-environment: DHBW-NLP-CrowdFlow
+
+    - name: Verify Installation
+      shell: bash
+      run: |
+        eval "$(conda shell.bash hook)"
+        conda activate DHBW-NLP-CrowdFlow
+        python --version
+        conda list
+
+    - name: Run Jupyter Notebooks
+      shell: bash
+      run: |
+        eval "$(conda shell.bash hook)"
+        conda activate DHBW-NLP-CrowdFlow
+        for notebook in $(find ./src -name "*.ipynb"); do
+          echo "Running $notebook"
+          jupyter nbconvert --to notebook --execute $notebook
+          echo ""
+        done
+
+  test-run-notebooks-windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Miniconda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-update-conda: true
+        environment-file: environment.yml
+        activate-environment: DHBW-NLP-CrowdFlow
+
+    - name: Verify Installation
+      shell: cmd
+      run: |
+        CALL conda activate DHBW-NLP-CrowdFlow
+        python --version
+        conda list
+
+    - name: Run Jupyter Notebooks
+      shell: cmd
+      run: |
+        CALL conda activate DHBW-NLP-CrowdFlow
+        FOR /R ./src %%G IN (*.ipynb) DO (
+          ECHO Running %%G
+          jupyter execute %%G
+          ECHO.
+        )
