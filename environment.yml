@@ -2,7 +2,6 @@ name: DHBW-NLP-CrowdFlow
 channels:
   - defaults
 dependencies:
-  - anaconda_prompt=1.1.0
   - bzip2=1.0.8
   - ca-certificates=2024.11.26
   - libffi=3.4.4
@@ -12,8 +11,6 @@ dependencies:
   - setuptools=75.1.0
   - sqlite=3.45.3
   - tk=8.6.14
-  - vc=14.40
-  - vs2015_runtime=14.42.34433
   - wheel=0.44.0
   - xz=5.4.6
   - zlib=1.2.13
