@@ -1,6 +1,6 @@
 name: DHBW-NLP-CrowdFlow
 channels:
-  - defaults
+  - conda-forge
 dependencies:
   - python==3.11.10
   - matplotlib
