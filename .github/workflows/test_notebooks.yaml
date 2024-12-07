@@ -19,7 +19,12 @@ jobs:
       with:
         auto-update-conda: true
         environment-file: environment.yml
-        activate-environment: DHBW-NLP-CrowdFlow
+        activate-environment: base
+
+    - name: Initialize Conda
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate base
 
     - name: Check Installation
       shell: bash
