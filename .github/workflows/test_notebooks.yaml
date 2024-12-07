@@ -14,28 +14,18 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Install Miniconda
-      shell: bash
-      run: |
-        wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-        bash miniconda.sh -b -p $HOME/miniconda
-        echo "$HOME/miniconda/bin" >> $GITHUB_PATH
-        source $HOME/miniconda/bin/activate
-        conda init bash
-
-    - name: Create Conda Environment
-      shell: bash
-      run: |
-        source $HOME/miniconda/bin/activate
-        conda env create -f conda-env.yaml
-        conda activate CrowdFlow
-        conda info --envs
+    - name: Setup Python
+      uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: CrowdFlow
+          environment-file: ./conda-env.yaml
+          auto-activate-base: false
 
     - name: Run Jupyter Notebooks
       shell: bash
       run: |
         source $HOME/miniconda/bin/activate
-        conda activate CrowdFlow
+        conda activate conda-env
         for notebook in $(find ./src -name "*.ipynb"); do
           echo "Running $notebook"
           jupyter nbconvert --to notebook --execute $notebook --output executed-$notebook || exit 1
