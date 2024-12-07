@@ -17,29 +17,29 @@ jobs:
     - name: Set up Miniconda
       uses: conda-incubator/setup-miniconda@v2
       with:
-        auto-active-base: false
+        auto-update-conda: true
         environment-file: environment.yml
-        activate-environment: base
+        activate-environment: DHBW-NLP-CrowdFlow
 
     - name: Initialize Conda
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate base
-
-    - name: Check Installation
       shell: bash
       run: |
-          conda env list
-          conda list
-          conda init
-          conda activate DHBW-NLP-CrowdFlow
-          python --version
+        eval "$(conda shell.bash hook)"
+        conda activate DHBW-NLP-CrowdFlow
+
+    - name: Install Jupyter Execute
+      shell: bash
+      run: |
+        eval "$(conda shell.bash hook)"
+        conda activate DHBW-NLP-CrowdFlow
+        pip install nbconvert
 
     - name: Run Jupyter Notebooks
       shell: bash
       run: |
+        eval "$(conda shell.bash hook)"
         conda activate DHBW-NLP-CrowdFlow
         for notebook in $(find ./src -name "*.ipynb"); do
           echo "Running $notebook"
-          jupyter execute $notebook
+          jupyter nbconvert --to notebook --execute $notebook --output $notebook
         done
