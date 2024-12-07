@@ -21,6 +21,14 @@ jobs:
         environment-file: environment.yml
         activate-environment: DHBW-NLP-CrowdFlow
 
+    - name: Check Installation
+      shell: bash
+      run: |
+          conda env list
+          conda list
+          conda activate DHBW-NLP-CrowdFlow
+          python --version
+
     - name: Run Jupyter Notebooks
       shell: bash
       run: |

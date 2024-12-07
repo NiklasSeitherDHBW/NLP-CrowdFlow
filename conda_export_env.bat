@@ -1,1 +1,1 @@
-python -m pip list --format=freeze > requirements.txt
+conda env export --from-history | findstr /V "prefix:" > environment.yml
