@@ -37,6 +37,8 @@ jobs:
         mkdir -p .github/workflows/output
         for notebook in $(find ./src -name "*.ipynb"); do
           echo "Running $notebook"
+          # Extract the directory of the notebook to ensure the output directory exists
+          mkdir -p "$(dirname .github/workflows/output/$(basename $notebook))"
           jupyter nbconvert --to notebook --execute $notebook --output .github/workflows/output/$(basename ${notebook%.ipynb}_linux_executed.ipynb)
           echo ""
         done
@@ -74,6 +76,7 @@ jobs:
         mkdir .github\workflows\output
         FOR /R ./src %%G IN (*.ipynb) DO (
           ECHO Running %%G
+          mkdir .github\workflows\output
           jupyter nbconvert --to notebook --execute %%G --output .github\workflows\output\%%~nG_windows_executed.ipynb
           ECHO.
         )
