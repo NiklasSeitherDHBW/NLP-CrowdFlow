@@ -1,0 +1,109 @@
+name: Test Jupyter Notebooks with Conda Caching
+
+on:
+  pull_request:
+    branches:
+      - "*"
+  push:
+    branches:
+      - "*"
+
+jobs:
+  test-run-notebooks-linux:
+    name: Test Run Jupyter Notebooks on Ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Cache Conda Packages
+      uses: actions/cache@v4
+      env:
+        CACHE_NUMBER: 1
+      with:
+        path: ~/conda_pkgs_dir
+        key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
+        restore-keys: |
+          ${{ runner.os }}-conda-
+
+    - name: Set up Miniconda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-update-conda: true
+        environment-file: environment.yml
+        activate-environment: DHBW-NLP-CrowdFlow
+        channel-priority: strict
+        use-only-tar-bz2: true
+
+    - name: Verify Installation
+      run: |
+        eval "$(conda shell.bash hook)"
+        conda activate DHBW-NLP-CrowdFlow
+        python --version
+        conda list
+
+    - name: Run Jupyter Notebooks
+      run: |
+        eval "$(conda shell.bash hook)"
+        conda activate DHBW-NLP-CrowdFlow
+        for notebook in $(find ./src -name "*.ipynb"); do
+          echo "Running $notebook"
+          jupyter nbconvert --to notebook --execute "$notebook" --output "$(basename "${notebook%.ipynb}_linux_executed.ipynb")"
+          echo ""
+        done
+
+    - name: Upload Executed Notebooks as Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: executed-notebooks-linux
+        path: ./src/**/*_linux_executed.ipynb
+
+  test-run-notebooks-windows:
+    name: Test Run Jupyter Notebooks on Windows
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Cache Conda Packages
+      uses: actions/cache@v4
+      env:
+        CACHE_NUMBER: 1
+      with:
+        path: C:\Users\runneradmin\conda_pkgs_dir
+        key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
+        restore-keys: |
+          ${{ runner.os }}-conda-
+
+    - name: Set up Miniconda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-update-conda: true
+        environment-file: environment.yml
+        activate-environment: DHBW-NLP-CrowdFlow
+        channel-priority: strict
+        use-only-tar-bz2: true
+
+    - name: Verify Installation
+      run: |
+        conda activate DHBW-NLP-CrowdFlow
+        python --version
+        conda list
+
+    - name: Run Jupyter Notebooks
+      run: |
+        cmd /c "FOR /R ./src %G IN (*.ipynb) DO echo Running %G & jupyter nbconvert --to notebook --execute %G --output %~dpnG_windows_executed.ipynb & echo Finished %G"
+
+    - name: List Files
+      run: |
+        dir
+        dir src
+
+    - name: Upload Executed Notebooks as Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: executed-notebooks-windows
+        path: ./src/**/*_windows_executed.ipynb

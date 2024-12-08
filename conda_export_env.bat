@@ -1,1 +1,1 @@
-conda env export --no-build > environment.yml
+conda env export --from-history | findstr /V "prefix:" > environment.yml
