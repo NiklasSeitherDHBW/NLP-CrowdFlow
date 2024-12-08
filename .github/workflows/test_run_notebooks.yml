@@ -34,7 +34,7 @@ jobs:
         environment-file: environment.yml
         activate-environment: DHBW-NLP-CrowdFlow
         channel-priority: strict
-        pkgs-dirs: ~/conda_pkgs_dir
+        use-only-tar-bz2: true
 
     - name: Verify Installation
       run: |
@@ -85,7 +85,7 @@ jobs:
         environment-file: environment.yml
         activate-environment: DHBW-NLP-CrowdFlow
         channel-priority: strict
-        pkgs-dirs: D:\conda_pkgs_dir
+        use-only-tar-bz2: true
 
     - name: Verify Installation
       run: |
@@ -95,11 +95,11 @@ jobs:
 
     - name: Run Jupyter Notebooks
       run: |
-        FOR /R ./src %%G IN (*.ipynb) DO (
-          ECHO Running %%G
-          jupyter nbconvert --to notebook --execute %%G --output %%~dpnG_windows_executed.ipynb
-          ECHO.
-        )
+        cmd /c "FOR /R ./src %G IN (*.ipynb) DO (
+          echo Running %G
+          jupyter nbconvert --to notebook --execute %G --output %~dpnG_windows_executed.ipynb
+          echo.
+        )"
 
     - name: Upload Executed Notebooks as Artifacts
       uses: actions/upload-artifact@v3
