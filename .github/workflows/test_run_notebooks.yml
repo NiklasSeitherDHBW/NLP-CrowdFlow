@@ -54,7 +54,7 @@ jobs:
         done
 
     - name: Upload Executed Notebooks as Artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: executed-notebooks-linux
         path: ./src/**/*_linux_executed.ipynb
@@ -97,12 +97,17 @@ jobs:
       run: |
         cmd /c "FOR /R ./src %G IN (*.ipynb) DO (
           echo Running %G
-          jupyter nbconvert --to notebook --execute %G --output %~dpnG_windows_executed.ipynb
+          jupyter nbconvert --to notebook --execute %G --output "%~dpnG_windows_executed.ipynb"
           echo.
         )"
 
+    - name: List Files
+      run: |
+        dir
+        dir src
+
     - name: Upload Executed Notebooks as Artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: executed-notebooks-windows
         path: ./src/**/*_windows_executed.ipynb
