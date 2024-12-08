@@ -1,4 +1,4 @@
-name: Test Run Jupyter Notebooks
+name: Test Jupyter Notebooks
 
 on:
   push:
@@ -34,11 +34,18 @@ jobs:
       run: |
         eval "$(conda shell.bash hook)"
         conda activate DHBW-NLP-CrowdFlow
+        mkdir -p .github/workflows/output
         for notebook in $(find ./src -name "*.ipynb"); do
           echo "Running $notebook"
-          jupyter nbconvert --to notebook --execute $notebook
+          jupyter nbconvert --to notebook --execute $notebook --output .github/workflows/output/$(basename ${notebook%.ipynb}_linux_executed.ipynb)
           echo ""
         done
+
+    - name: Upload Executed Notebooks as Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: executed-notebooks-linux
+        path: .github/workflows/output/*_linux_executed.ipynb
 
   test-run-notebooks-windows:
     runs-on: windows-latest
@@ -57,16 +64,22 @@ jobs:
     - name: Verify Installation
       shell: cmd
       run: |
-        CALL conda activate DHBW-NLP-CrowdFlow
+        CALL conda.bat activate DHBW-NLP-CrowdFlow
         python --version
         conda list
 
     - name: Run Jupyter Notebooks
       shell: cmd
       run: |
-        CALL conda activate DHBW-NLP-CrowdFlow
+        mkdir .github\workflows\output
         FOR /R ./src %%G IN (*.ipynb) DO (
           ECHO Running %%G
-          jupyter execute %%G
+          jupyter nbconvert --to notebook --execute %%G --output .github\workflows\output\%%~nG_windows_executed.ipynb
           ECHO.
         )
+
+    - name: Upload Executed Notebooks as Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: executed-notebooks-windows
+        path: .github\workflows\output\*_windows_executed.ipynb
