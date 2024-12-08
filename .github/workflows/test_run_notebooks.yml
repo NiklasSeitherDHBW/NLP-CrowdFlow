@@ -95,11 +95,7 @@ jobs:
 
     - name: Run Jupyter Notebooks
       run: |
-        cmd /c "FOR /R ./src %G IN (*.ipynb) DO (
-          echo Running %G
-          jupyter nbconvert --to notebook --execute %G --output "%G_windows_executed.ipynb"
-          echo.
-        )"
+        cmd /c "FOR /R ./src %G IN (*.ipynb) DO echo Running %G & jupyter nbconvert --to notebook --execute %G --output %~dpnG_windows_executed.ipynb & echo Finished %G"
 
     - name: List Files
       run: |
