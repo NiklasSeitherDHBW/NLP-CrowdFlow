@@ -49,7 +49,7 @@ jobs:
         conda activate DHBW-NLP-CrowdFlow
         for notebook in $(find ./src -name "*.ipynb"); do
           echo "Running $notebook"
-          jupyter nbconvert --to notebook --execute "$notebook" --output "${notebook%.ipynb}_linux_executed.ipynb"
+          jupyter nbconvert --to notebook --execute "$notebook" --output "$(dirname "$notebook")/$(basename "${notebook%.ipynb}_linux_executed.ipynb")"
           echo ""
         done
 
@@ -89,7 +89,7 @@ jobs:
 
     - name: Verify Installation
       run: |
-        CALL conda.bat activate DHBW-NLP-CrowdFlow
+        conda activate DHBW-NLP-CrowdFlow
         python --version
         conda list
 
