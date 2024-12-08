@@ -47,10 +47,9 @@ jobs:
       run: |
         eval "$(conda shell.bash hook)"
         conda activate DHBW-NLP-CrowdFlow
-        mkdir -p .github/workflows/output
         for notebook in $(find ./src -name "*.ipynb"); do
           echo "Running $notebook"
-          jupyter nbconvert --to notebook --execute $notebook --output ./$(basename ${notebook%.ipynb}_linux_executed.ipynb)
+          jupyter nbconvert --to notebook --execute $notebook --output ${notebook%.ipynb}_linux_executed.ipynb
           echo ""
         done
 
@@ -58,7 +57,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: executed-notebooks-linux
-        path: ./*_linux_executed.ipynb
+        path: ./src/**/*_linux_executed.ipynb
 
   test-run-notebooks-windows:
     name: Test Run Jupyter Notebooks on Windows
@@ -90,16 +89,15 @@ jobs:
 
     - name: Verify Installation
       run: |
-        CALL conda.bat activate DHBW-NLP-CrowdFlow
+        conda activate DHBW-NLP-CrowdFlow
         python --version
         conda list
 
     - name: Run Jupyter Notebooks
       run: |
-        mkdir .github\workflows\output
         FOR /R ./src %%G IN (*.ipynb) DO (
           ECHO Running %%G
-          jupyter nbconvert --to notebook --execute %%G --output ./%%~nG_windows_executed.ipynb
+          jupyter nbconvert --to notebook --execute %%G --output %%~dpnG_windows_executed.ipynb
           ECHO.
         )
 
@@ -107,4 +105,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: executed-notebooks-windows
-        path: ./*_windows_executed.ipynb
+        path: ./src/**/*_windows_executed.ipynb
