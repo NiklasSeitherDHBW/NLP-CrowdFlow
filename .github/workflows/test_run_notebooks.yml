@@ -1,18 +1,31 @@
-name: Test Jupyter Notebooks
+name: Test Jupyter Notebooks with Conda Caching
 
 on:
+  pull_request:
+    branches:
+      - "*"
   push:
     branches:
-      - main
-  pull_request:
+      - "*"
 
 jobs:
   test-run-notebooks-linux:
+    name: Test Run Jupyter Notebooks on Ubuntu
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+
+    - name: Cache Conda Packages
+      uses: actions/cache@v4
+      env:
+        CACHE_NUMBER: 1
+      with:
+        path: ~/conda_pkgs_dir
+        key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
+        restore-keys: |
+          ${{ runner.os }}-conda-
 
     - name: Set up Miniconda
       uses: conda-incubator/setup-miniconda@v2
@@ -20,9 +33,10 @@ jobs:
         auto-update-conda: true
         environment-file: environment.yml
         activate-environment: DHBW-NLP-CrowdFlow
+        channel-priority: strict
+        pkgs-dirs: ~/conda_pkgs_dir
 
     - name: Verify Installation
-      shell: bash
       run: |
         eval "$(conda shell.bash hook)"
         conda activate DHBW-NLP-CrowdFlow
@@ -30,16 +44,13 @@ jobs:
         conda list
 
     - name: Run Jupyter Notebooks
-      shell: bash
       run: |
         eval "$(conda shell.bash hook)"
         conda activate DHBW-NLP-CrowdFlow
         mkdir -p .github/workflows/output
         for notebook in $(find ./src -name "*.ipynb"); do
           echo "Running $notebook"
-          # Extract the directory of the notebook to ensure the output directory exists
-          mkdir -p "$(dirname .github/workflows/output/$(basename $notebook))"
-          jupyter nbconvert --to notebook --execute $notebook --output .github/workflows/output/$(basename ${notebook%.ipynb}_linux_executed.ipynb)
+          jupyter nbconvert --to notebook --execute $notebook --output ./$(basename ${notebook%.ipynb}_linux_executed.ipynb)
           echo ""
         done
 
@@ -47,14 +58,26 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: executed-notebooks-linux
-        path: .github/workflows/output/*_linux_executed.ipynb
+        path: ./*_linux_executed.ipynb
 
   test-run-notebooks-windows:
+    name: Test Run Jupyter Notebooks on Windows
     runs-on: windows-latest
+    timeout-minutes: 30
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+
+    - name: Cache Conda Packages
+      uses: actions/cache@v4
+      env:
+        CACHE_NUMBER: 1
+      with:
+        path: D:\conda_pkgs_dir
+        key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
+        restore-keys: |
+          ${{ runner.os }}-conda-
 
     - name: Set up Miniconda
       uses: conda-incubator/setup-miniconda@v2
@@ -62,22 +85,21 @@ jobs:
         auto-update-conda: true
         environment-file: environment.yml
         activate-environment: DHBW-NLP-CrowdFlow
+        channel-priority: strict
+        pkgs-dirs: D:\conda_pkgs_dir
 
     - name: Verify Installation
-      shell: cmd
       run: |
         CALL conda.bat activate DHBW-NLP-CrowdFlow
         python --version
         conda list
 
     - name: Run Jupyter Notebooks
-      shell: cmd
       run: |
         mkdir .github\workflows\output
         FOR /R ./src %%G IN (*.ipynb) DO (
           ECHO Running %%G
-          mkdir .github\workflows\output
-          jupyter nbconvert --to notebook --execute %%G --output .github\workflows\output\%%~nG_windows_executed.ipynb
+          jupyter nbconvert --to notebook --execute %%G --output ./%%~nG_windows_executed.ipynb
           ECHO.
         )
 
@@ -85,4 +107,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: executed-notebooks-windows
-        path: .github\workflows\output\*_windows_executed.ipynb
+        path: ./*_windows_executed.ipynb
