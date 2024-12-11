@@ -1,3 +1,9 @@
+from src.utils.data_preprocessing import Utils, NLTKTokenizer, CompoundWordSplitter
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.feature_extraction.text import TfidfVectorizer
+import src.utils.config as Config
+
 class NLTK:
     """_summary_
     """
@@ -18,7 +24,7 @@ class NLTK:
         pipeline_sentiment_nltk = Pipeline(
             steps=[
                 ('preprocessing', ColumnTransformer(transformers, remainder='drop')),
-                ('clf', RandomForestClassifier(random_state=RANDOM_STATE))
+                ('clf', RandomForestClassifier(random_state=Config.RANDOM_STATE))
             ],
             verbose=True
         )
@@ -26,7 +32,7 @@ class NLTK:
         self.pipeline = Pipeline(
             steps=[
                 ('preprocessing', ColumnTransformer(transformers, remainder='drop')),
-                ('clf', RandomForestClassifier(random_state=RANDOM_STATE))
+                ('clf', RandomForestClassifier(random_state=Config.RANDOM_STATE))
             ], 
             verbose=True
         )
