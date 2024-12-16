@@ -52,8 +52,16 @@ st.title("\U0001F4C8 Kursanalyse Dashboard")
 # Oben: Dropdowns und Datumsbereichsauswahl
 col1, col2 = st.columns([1, 1])
 
+
+symbols = {
+    "Bitcoin": "INDEX:BTCUSD",
+    "Ethereum": "INDEX:ETHUSD",
+    "Ripple": "BINANCE:XRPUSD"
+}
+
+
 with col1:
-    selected_crypto = st.selectbox("Dropdown - Kryptowährung", ["Bitcoin", "Ethereum", "Ripple"])
+    selected_crypto = st.selectbox("Kryptowährung auswählen:", list(symbols.keys()))
 
 with col2:
     date_range = st.date_input(
@@ -122,7 +130,39 @@ with col3:
     st.markdown("""
             <div class="custom-title">Kursverlauf (Kerzendiagramm)</div>
     """, unsafe_allow_html=True)
-    st.plotly_chart(fig_candlestick, use_container_width=True)
+    #st.plotly_chart(fig_candlestick, use_container_width=True)
+
+    tradingview_html = f"""
+    <!-- TradingView Widget BEGIN -->
+    <style>
+        .chart-container {{
+            width: 100%;
+            height: calc(100vh - 250px); /* Dynamische Höhe */
+        }}
+    </style>
+    <div class="chart-container">
+        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
+        {{
+            "autosize": true,
+            "symbol": "{symbols[selected_crypto]}",
+            "interval": "D",
+            "timezone": "Etc/UTC",
+            "theme": "light",
+            "style": "1",
+            "locale": "en",
+            "hide_top_toolbar": true,
+            "withdateranges": true,
+            "allow_symbol_change": false,
+            "calendar": false,
+            "support_host": "https://www.tradingview.com"
+        }}
+        </script>
+    </div>
+    <!-- TradingView Widget END -->
+    """
+
+    st.components.v1.html(tradingview_html, height=700)
+
     st.markdown("""
         <hr class="horizontal-line">
     """, unsafe_allow_html=True)  # Horizontale Linie
