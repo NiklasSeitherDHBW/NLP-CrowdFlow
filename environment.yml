@@ -2,12 +2,16 @@ name: DHBW-NLP-CrowdFlow
 channels:
   - defaults
 dependencies:
-  - python==3.11.10
+  - jupyter
   - matplotlib
-  - nltk==3.8.1
   - pandas
+  - python==3.11.10
   - pytorch
   - scikit-learn
   - transformers
-  - jupyter
+  - nltk==3.8.1
+  - numpy
+  - scipy
   - seaborn
+  - plotly
+  - streamlit
