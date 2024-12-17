@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
+import yfinance as yf
 
 # Mockup-Daten erstellen
 def generate_mock_data():
@@ -52,13 +53,11 @@ st.title("\U0001F4C8 Kursanalyse Dashboard")
 # Oben: Dropdowns und Datumsbereichsauswahl
 col1, col2 = st.columns([1, 1])
 
-
 symbols = {
-    "Bitcoin": "INDEX:BTCUSD",
-    "Ethereum": "INDEX:ETHUSD",
-    "Ripple": "BINANCE:XRPUSD"
+    "Bitcoin": "BTC-USD",
+    "Ethereum": "ETH-USD",
+    "Ripple": "XRP-USD"
 }
-
 
 with col1:
     selected_crypto = st.selectbox("Kryptowährung auswählen:", list(symbols.keys()))
@@ -128,7 +127,7 @@ col3, col4 = st.columns([3, 1])
 with col3:
     # Horizontale Linie vor Sentiment-Diagramm
     st.markdown("""
-            <div class="custom-title">Kursverlauf (Kerzendiagramm)</div>
+        <div class="custom-title">Kursverlauf (Kerzendiagramm)</div>
     """, unsafe_allow_html=True)
     #st.plotly_chart(fig_candlestick, use_container_width=True)
 
@@ -137,7 +136,7 @@ with col3:
     <style>
         .chart-container {{
             width: 100%;
-            height: calc(100vh - 250px); /* Dynamische Höhe */
+            height: calc(100vh); /* Dynamische Höhe */
         }}
     </style>
     <div class="chart-container">
@@ -153,7 +152,16 @@ with col3:
             "hide_top_toolbar": true,
             "withdateranges": true,
             "allow_symbol_change": false,
+            "save_image": false,
             "calendar": false,
+            "dateRanges": [
+                "1d|60",
+                "1m|30",
+                "3m|60",
+                "12m|1D",
+                "60m|1W",
+                "all|1M"
+            ],
             "support_host": "https://www.tradingview.com"
         }}
         </script>
@@ -161,7 +169,39 @@ with col3:
     <!-- TradingView Widget END -->
     """
 
-    st.components.v1.html(tradingview_html, height=700)
+    # st.components.v1.html(tradingview_html, height=700)
+
+    # Daten abrufen
+    # Daten abrufen und Multi-Index bereinigen
+    if len(date_range) == 2:
+        start_date, end_date = date_range
+        data = yf.download(symbols[selected_crypto], interval="1d", start=start_date, end=end_date, multi_level_index=False)
+
+        # Multi-Index bereinigen
+        data = data.reset_index()  # Multi-Index auflösen
+
+        print(data.head())
+
+        # Plotly Candlestick-Chart erstellen
+        fig = go.Figure(data=[go.Candlestick(
+            x=data['Date'] if 'Date' in data.columns else data['Datetime'],
+            open=data['Open'],
+            high=data['High'],
+            low=data['Low'],
+            close=data['Close']
+        )])
+
+        fig.update_layout(
+            title=f"{selected_crypto} Kursverlauf",
+            xaxis_title="Datum",
+            yaxis_title="Preis in USD",
+            xaxis_rangeslider_visible=True
+        )
+
+        # Chart anzeigen
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.warning("Bitte wähle ein gültiges Start- und Enddatum aus.")
 
     st.markdown("""
         <hr class="horizontal-line">
