@@ -7,7 +7,7 @@ import yfinance as yf
 
 # Mockup-Daten erstellen
 def generate_mock_data():
-    dates = pd.date_range(start="2022-01-01", end=datetime.today(), freq="D")
+    dates = pd.date_range(start="2022-01-01", end=datetime.today(), freq="T")
     data = {
         "Date": dates,
         "Price": np.random.uniform(20000, 60000, len(dates)),
@@ -71,14 +71,34 @@ with col2:
     )
 
 # Daten filtern
-filtered_data = df[(df["Date"] >= pd.Timestamp(date_range[0])) & (df["Date"] <= pd.Timestamp(date_range[1]))]
+start_date, end_date = date_range
+
+filtered_data = df[(df["Date"] >= pd.Timestamp(start_date)) & (df["Date"] <= pd.Timestamp(end_date))]
+filtered_data.set_index("Date", inplace=True)
 
 # Aggregation auf wöchentlicher Basis (anpassbar)
-filtered_data["Week"] = filtered_data["Date"].dt.to_period("W").dt.start_time
-weekly_sentiment = filtered_data.groupby("Week")["Change"].value_counts(normalize=True).unstack(fill_value=0)
+# filtered_data["Week"] = filtered_data["Date"].dt.to_period("W").dt.start_time
+print(filtered_data)
+# weekly_sentiment =  filtered_data.groupby("Week")["Change"].value_counts(normalize=True).unstack(fill_value=0)
 
+diff = end_date - start_date
+print(diff.days)
+# Group by the appropriate frequency and aggregate the "Change" column
+if diff.days == 1: 
+    grouped_data = filtered_data.groupby(pd.Grouper(freq='H'))["Change"].value_counts()
+elif diff.days <= 7:
+    grouped_data = filtered_data.groupby(pd.Grouper(freq='D'))["Change"].value_counts()
+else:
+    grouped_data = filtered_data.groupby(pd.Grouper(freq='W'))["Change"].value_counts()
+
+#grouped_data.reset_index(inplace=True)
+grouped_data = grouped_data.unstack(fill_value=0)
+print("Jdaskdjnaskjdkjsakj=============================================================================")
+print(grouped_data)
+
+        
 # Gestapeltes Balkendiagramm für Sentiment-Verlauf
-fig_sentiment = go.Figure()
+"""fig_sentiment = go.Figure()
 fig_sentiment.add_trace(go.Bar(
     x=weekly_sentiment.index,
     y=weekly_sentiment["Positive"],
@@ -105,9 +125,36 @@ fig_sentiment.update_layout(
     height=320,
     legend_title="Sentiment"
 )
+"""
+
+fig_sentiment = go.Figure()
+fig_sentiment.add_trace(go.Bar(
+    x=grouped_data.index,
+    y=grouped_data["Positive"],
+    name="Positive",
+    marker_color="green"
+))
+fig_sentiment.add_trace(go.Bar(
+    x=grouped_data.index,
+    y=grouped_data["Neutral"],
+    name="Neutral",
+    marker_color="gray"
+))
+fig_sentiment.add_trace(go.Bar(
+    x=grouped_data.index,
+    y=grouped_data["Negative"],
+    name="Negative",
+    marker_color="red"
+))
+fig_sentiment.update_layout(
+    barmode="stack",  # Stacked bar chart
+    title="Sentiment Over Time",
+    xaxis_title="Date",
+    yaxis_title="Proportion"
+)
 
 # Mittig: Kerzendiagramm
-fig_candlestick = go.Figure(data=[go.Candlestick(
+"""fig_candlestick = go.Figure(data=[go.Candlestick(
     x=filtered_data["Date"],
     open=filtered_data["Price"] - np.random.uniform(0, 1000, len(filtered_data)),
     high=filtered_data["Price"] + np.random.uniform(0, 1000, len(filtered_data)),
@@ -120,7 +167,7 @@ fig_candlestick.update_layout(
     yaxis_title="Preis",
     height=280
 )
-
+"""
 # Layout mit optischen Kästen und Scrollbar
 col3, col4 = st.columns([3, 1])
 
@@ -175,8 +222,24 @@ with col3:
     # Daten abrufen und Multi-Index bereinigen
     if len(date_range) == 2:
         start_date, end_date = date_range
-        data = yf.download(symbols[selected_crypto], interval="1d", start=start_date, end=end_date, multi_level_index=False)
-
+        
+        data = yf.download(symbols[selected_crypto], interval="60m", start=start_date, end=end_date, multi_level_index=False)
+        diff = end_date - start_date
+        print(diff.days)
+        #   data = data.loc[start_date:end_date]
+        print(diff.days)      
+        if diff.days == 1: 
+            # Group by hours if the difference is less than a day
+            data = data.groupby(pd.Grouper(level=0, freq='H')).agg({'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'})
+        elif diff.days < 7:
+            # Group by days if the difference is less than a week but more than a day
+            data = data.groupby(pd.Grouper(level=0, freq='D')).agg({'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'})
+        else:
+            # Group by weeks if the difference is more than a week
+            data = data.groupby(pd.Grouper(level=0, freq='W')).agg({'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'})            
+        
+        
+            
         # Multi-Index bereinigen
         data = data.reset_index()  # Multi-Index auflösen
 
