@@ -5,6 +5,7 @@ import copy
 import re
 import string
 import pandas as pd
+from scipy.sparse import csr_matrix
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
@@ -240,3 +241,29 @@ class CustomPipeline:
 
         plt.title(f"Normalized Confusion Matrix for {model_name}")
         plt.show()
+
+
+import numpy as np
+from scipy.sparse import csr_matrix
+from sklearn.compose import ColumnTransformer
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+class BatchDenseTransformer(BaseEstimator, TransformerMixin):
+    def __init__(self, batch_size=500):
+        self.batch_size = batch_size
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        """Batchweise Konvertierung von Sparse zu Dense"""
+        if isinstance(X, csr_matrix):
+            n_samples = X.shape[0]
+            dense_batches = []
+            for i in range(0, n_samples, self.batch_size):
+                X_batch = X[i:i + self.batch_size].toarray()
+                dense_batches.append(X_batch)
+                del X_batch  # RAM freigeben
+            return np.vstack(dense_batches)  # Alle Batches zusammenführen
+        return X
+
