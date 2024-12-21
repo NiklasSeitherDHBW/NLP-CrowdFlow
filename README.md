@@ -53,4 +53,4 @@ Anhand des Zeitraums wird der offizielle Kurs der gewählten Cryptowährung in e
 
 Der Einblick wird zudem erweitert, indem in einem Fenster an der rechten Seite des Interfaces die analysierten Blockposts angezeigt werden. Hiermit kann sich der Nutzer noch mehr Informationen darüber beschaffen, was die genauen Gründe für positive, neutrale oder negative Stimmungsbilder sind, um diese in die eigene Entscheidungsfindung udn Recherchen einfließen lassen zu können. Hiermit wird dem Nutzer eine weitere Informationsquelle geboten, um das Gesamtbild möglichst vollständig erfassen zu können
 
-![Datenstruktur](res/images/UI.png)
+![Datenstruktur](docs/UI.png)
