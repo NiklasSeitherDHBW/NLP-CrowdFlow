@@ -1,4 +1,13 @@
+jupyter
+matplotlib
 pandas
-streamlit
-plotly
+pytorch
+scikit-learn
+transformers
+nltk==3.8.1
 numpy
+scipy
+seaborn
+plotly
+streamlit
+yfinance
