@@ -14,7 +14,7 @@ CRYPTO_SYMBOLS = {
     "Ripple": "XRP-USD"
 }
 
-# Helper Functions
+
 def generate_mock_data():
     """Generate mock data for sentiment analysis."""
     dates = pd.date_range(start="2022-01-01", end=datetime.today(), freq="h")
@@ -42,8 +42,9 @@ def generate_mock_news():
 def display_news(news_df):
     # Create a scrollable container
     for _, row in news_df.iterrows():
-        sentiment_color = {"Positive": "green", "Neutral": "gray", "Negative": "red"}[row["sentiment"]]
-        
+        sentiment_color = {"Positive": "green",
+                           "Neutral": "gray", "Negative": "red"}[row["sentiment"]]
+
         # HTML structure to display title, content, and sentiment label
         st.markdown(
             f"""
@@ -61,7 +62,7 @@ def display_news(news_df):
         )
 
         st.markdown("---")
-        
+
 
 def get_frequency(start_date, end_date):
     """Determine the frequency for grouping data based on the date range."""
@@ -78,22 +79,24 @@ def get_frequency(start_date, end_date):
 
 def group_data(df, start_date, end_date):
     """Group data based on the selected date range."""
-    filtered_data = df[(df["Date"] >= pd.Timestamp(start_date)) & (df["Date"] <= pd.Timestamp(end_date))]
+    filtered_data = df[(df["Date"] >= pd.Timestamp(start_date))
+                       & (df["Date"] <= pd.Timestamp(end_date))]
     filtered_data.set_index("Date", inplace=True)
     freq = get_frequency(start_date, end_date)
-    grouped = filtered_data.groupby(pd.Grouper(freq=freq))["Change"].value_counts().unstack(fill_value=0)
+    grouped = filtered_data.groupby(pd.Grouper(freq=freq))[
+        "Change"].value_counts().unstack(fill_value=0)
     return grouped
 
 
 def download_crypto_data(symbol, start_date, end_date):
     """Fetch cryptocurrency data from Yahoo Finance."""
     data = yf.download(symbol, interval="60m",
-                           start=start_date, end=end_date, multi_level_index=False)
+                       start=start_date, end=end_date, multi_level_index=False)
 
     freq = get_frequency(start_date, end_date)
     data = data.groupby(pd.Grouper(level=0, freq=freq)).agg(
         {'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'})
-    
+
     return data
 
 
@@ -144,8 +147,10 @@ def plot_sentiment(data):
     """Create a stacked bar chart for sentiment analysis."""
     fig = go.Figure()
     for sentiment, color in zip(["Positive", "Neutral", "Negative"], ["green", "gray", "red"]):
-        fig.add_trace(go.Bar(x=data.index, y=data.get(sentiment, 0), name=sentiment, marker_color=color))
-    fig.update_layout(barmode="stack", title="Sentiment Over Time", xaxis_title="Date", yaxis_title="Counts", legend={"orientation": "h"}, height=400)
+        fig.add_trace(go.Bar(x=data.index, y=data.get(
+            sentiment, 0), name=sentiment, marker_color=color))
+    fig.update_layout(barmode="stack", title="Sentiment Over Time", xaxis_title="Date",
+                      yaxis_title="Counts", legend={"orientation": "h"}, height=400)
     return fig
 
 
@@ -169,14 +174,15 @@ def main():
     # Inputs
     col1, col2 = st.columns(2)
     with col1:
-        selected_crypto = st.selectbox("Select Cryptocurrency:", list(CRYPTO_SYMBOLS.keys()))
+        selected_crypto = st.selectbox(
+            "Select Cryptocurrency:", list(CRYPTO_SYMBOLS.keys()))
     with col2:
         date_range = st.date_input("Select Date Range:", [datetime.today() - timedelta(days=30), datetime.today()],
                                    min_value=datetime(2022, 1, 1), max_value=datetime.today())
     if len(date_range) != 2:
         st.warning("Please select a valid date range.")
         return
-    
+
     start_date, end_date = date_range
 
     # Mock Sentiment Analysis
@@ -184,21 +190,25 @@ def main():
     sentiment_data = group_data(df, start_date, end_date)
 
     # Cryptocurrency Data
-    crypto_data = download_crypto_data(CRYPTO_SYMBOLS[selected_crypto], start_date, end_date)
+    crypto_data = download_crypto_data(
+        CRYPTO_SYMBOLS[selected_crypto], start_date, end_date)
 
     # Layout
     col3, col4 = st.columns([2, 1])
     with col3:
         st.subheader("Charts")
         with st.container(height=1100, border=True):
-            st.plotly_chart(plot_candlestick_with_separate_volume(crypto_data), use_container_width=True)
-            st.plotly_chart(plot_sentiment(sentiment_data), use_container_width=True)
+            st.plotly_chart(plot_candlestick_with_separate_volume(
+                crypto_data), use_container_width=True)
+            st.plotly_chart(plot_sentiment(sentiment_data),
+                            use_container_width=True)
 
     with col4:
         st.subheader("Information")
         with st.container(border=True, height=1100):
             news_df = generate_mock_news()
-            filtered_news = news_df[(news_df["date"] >= pd.Timestamp(start_date)) & (news_df["date"] <= pd.Timestamp(end_date))]
+            filtered_news = news_df[(news_df["date"] >= pd.Timestamp(
+                start_date)) & (news_df["date"] <= pd.Timestamp(end_date))]
             display_news(filtered_news)
 
 
