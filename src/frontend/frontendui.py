@@ -6,15 +6,16 @@ from datetime import datetime, timedelta
 import yfinance as yf
 
 # Mockup-Daten erstellen
+
+
 def generate_mock_data():
-    dates = pd.date_range(start="2022-01-01", end=datetime.today(), freq="T")
+    dates = pd.date_range(start="2022-01-01", end=datetime.today(), freq="h")
     data = {
         "Date": dates,
-        "Price": np.random.uniform(20000, 60000, len(dates)),
-        "Volume": np.random.uniform(1000, 10000, len(dates)),
         "Change": np.random.choice(["Positive", "Negative", "Neutral"], len(dates)),
     }
     return pd.DataFrame(data)
+
 
 # Mock-Daten laden
 df = generate_mock_data()
@@ -37,7 +38,7 @@ st.markdown("""
         width: 100%; /* Kastenbreite */
         height: 700px; /* Angepasste Höhe, bündig mit Achsenbeschriftung */
         overflow-y: scroll; /* Eigenes Scrollen aktivieren */ 
-        background-color: #f9f9f9;
+        /* background-color: #f9f9f9; */
     }
     .custom-title {
         font-size: 1.5rem; /* Größere Schriftgröße für Überschriften */
@@ -60,7 +61,8 @@ symbols = {
 }
 
 with col1:
-    selected_crypto = st.selectbox("Kryptowährung auswählen:", list(symbols.keys()))
+    selected_crypto = st.selectbox(
+        "Kryptowährung auswählen:", list(symbols.keys()))
 
 with col2:
     date_range = st.date_input(
@@ -73,59 +75,40 @@ with col2:
 # Daten filtern
 start_date, end_date = date_range
 
-filtered_data = df[(df["Date"] >= pd.Timestamp(start_date)) & (df["Date"] <= pd.Timestamp(end_date))]
+filtered_data = df[(df["Date"] >= pd.Timestamp(start_date))
+                   & (df["Date"] <= pd.Timestamp(end_date))]
 filtered_data.set_index("Date", inplace=True)
 
 # Aggregation auf wöchentlicher Basis (anpassbar)
-# filtered_data["Week"] = filtered_data["Date"].dt.to_period("W").dt.start_time
 print(filtered_data)
-# weekly_sentiment =  filtered_data.groupby("Week")["Change"].value_counts(normalize=True).unstack(fill_value=0)
-
 diff = end_date - start_date
 print(diff.days)
-# Group by the appropriate frequency and aggregate the "Change" column
-if diff.days == 1: 
-    grouped_data = filtered_data.groupby(pd.Grouper(freq='H'))["Change"].value_counts()
-elif diff.days <= 7:
-    grouped_data = filtered_data.groupby(pd.Grouper(freq='D'))["Change"].value_counts()
-else:
-    grouped_data = filtered_data.groupby(pd.Grouper(freq='W'))["Change"].value_counts()
 
-#grouped_data.reset_index(inplace=True)
-grouped_data = grouped_data.unstack(fill_value=0)
+# Group by the appropriate frequency and aggregate the "Change" column
+if diff.days <= 1:
+    grouped_data = filtered_data.groupby(pd.Grouper(freq='h'))[
+        "Change"].value_counts()
+if diff.days <= 3:
+    grouped_data = filtered_data.groupby(pd.Grouper(freq='2h'))[
+        "Change"].value_counts()
+elif diff.days <= 7:
+    grouped_data = filtered_data.groupby(pd.Grouper(freq='4h'))[
+        "Change"].value_counts()
+else:
+    grouped_data = filtered_data.groupby(pd.Grouper(freq='D'))[
+        "Change"].value_counts()
+
 print("Jdaskdjnaskjdkjsakj=============================================================================")
 print(grouped_data)
+grouped_data["Positive"] = 0
+grouped_data["Negative"] = 0
+grouped_data["Neutral"] = 0
+print(grouped_data)
+print("2222222222222222222=============================================================================")
+grouped_data = grouped_data.unstack(fill_value=0)
 
-        
-# Gestapeltes Balkendiagramm für Sentiment-Verlauf
-"""fig_sentiment = go.Figure()
-fig_sentiment.add_trace(go.Bar(
-    x=weekly_sentiment.index,
-    y=weekly_sentiment["Positive"],
-    name="Positive",
-    marker_color="green"
-))
-fig_sentiment.add_trace(go.Bar(
-    x=weekly_sentiment.index,
-    y=weekly_sentiment["Neutral"],
-    name="Neutral",
-    marker_color="gray"
-))
-fig_sentiment.add_trace(go.Bar(
-    x=weekly_sentiment.index,
-    y=weekly_sentiment["Negative"],
-    name="Negative",
-    marker_color="red"
-))
-fig_sentiment.update_layout(
-    barmode="stack",  # Gestapeltes Balkendiagramm
-    title="Sentiment-Verlauf",
-    xaxis_title="Zeitraum",
-    yaxis_title="Anteil",
-    height=320,
-    legend_title="Sentiment"
-)
-"""
+print(grouped_data)
+print("Jdaskdjnaskjdkjsakj=============================================================================")
 
 fig_sentiment = go.Figure()
 fig_sentiment.add_trace(go.Bar(
@@ -152,93 +135,45 @@ fig_sentiment.update_layout(
     xaxis_title="Date",
     yaxis_title="Proportion"
 )
-"""
-# Mittig: Kerzendiagramm
-fig_candlestick = go.Figure(data=[go.Candlestick(
-    x=filtered_data["Date"],
-    open=filtered_data["Price"] - np.random.uniform(0, 1000, len(filtered_data)),
-    high=filtered_data["Price"] + np.random.uniform(0, 1000, len(filtered_data)),
-    low=filtered_data["Price"] - np.random.uniform(0, 2000, len(filtered_data)),
-    close=filtered_data["Price"],
-)])
-fig_candlestick.update_layout(
-    title="Kursverlauf", 
-    xaxis_title="Datum",
-    yaxis_title="Preis",
-    height=280
-)"""
+
 # Layout mit optischen Kästen und Scrollbar
 col3, col4 = st.columns([3, 1])
 
 with col3:
     # Horizontale Linie vor Sentiment-Diagramm
-    st.markdown("""
-        <div class="custom-title">Kursverlauf (Kerzendiagramm)</div>
-    """, unsafe_allow_html=True)
-    #st.plotly_chart(fig_candlestick, use_container_width=True)
+    st.markdown(
+        """<div class="custom-title">Kursverlauf (Kerzendiagramm)</div>""",
+        unsafe_allow_html=True
+    )
 
-    tradingview_html = f"""
-    <!-- TradingView Widget BEGIN -->
-    <style>
-        .chart-container {{
-            width: 100%;
-            height: calc(100vh); /* Dynamische Höhe */
-        }}
-    </style>
-    <div class="chart-container">
-        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
-        {{
-            "autosize": true,
-            "symbol": "{symbols[selected_crypto]}",
-            "interval": "D",
-            "timezone": "Etc/UTC",
-            "theme": "light",
-            "style": "1",
-            "locale": "en",
-            "hide_top_toolbar": true,
-            "withdateranges": true,
-            "allow_symbol_change": false,
-            "save_image": false,
-            "calendar": false,
-            "dateRanges": [
-                "1d|60",
-                "1m|30",
-                "3m|60",
-                "12m|1D",
-                "60m|1W",
-                "all|1M"
-            ],
-            "support_host": "https://www.tradingview.com"
-        }}
-        </script>
-    </div>
-    <!-- TradingView Widget END -->
-    """
-
-    # st.components.v1.html(tradingview_html, height=700)
-
-    # Daten abrufen
     # Daten abrufen und Multi-Index bereinigen
     if len(date_range) == 2:
         start_date, end_date = date_range
-        
-        data = yf.download(symbols[selected_crypto], interval="60m", start=start_date, end=end_date, multi_level_index=False)
+
+        data = yf.download(symbols[selected_crypto], interval="60m",
+                           start=start_date, end=end_date, multi_level_index=False)
         diff = end_date - start_date
+
+        # data = data.loc[start_date:end_date]
         print(diff.days)
-        #   data = data.loc[start_date:end_date]
-        print(diff.days)      
-        if diff.days == 1: 
+
+        if diff.days <= 1:
             # Group by hours if the difference is less than a day
-            data = data.groupby(pd.Grouper(level=0, freq='H')).agg({'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'})
+            data = data.groupby(pd.Grouper(level=0, freq='h')).agg(
+                {'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'})
+        if diff.days <= 3:
+            # Group by hours if the difference is less than a day
+            data = data.groupby(pd.Grouper(level=0, freq='2h')).agg(
+                {'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'})
         elif diff.days < 7:
             # Group by days if the difference is less than a week but more than a day
-            data = data.groupby(pd.Grouper(level=0, freq='D')).agg({'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'})
+            data = data.groupby(pd.Grouper(level=0, freq='4h')).agg(
+                {'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'})
         else:
             # Group by weeks if the difference is more than a week
-            data = data.groupby(pd.Grouper(level=0, freq='W')).agg({'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'})            
-        
-        
-            
+            data = data.groupby(pd.Grouper(level=0, freq='D')).agg(
+                {'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'})
+
         # Multi-Index bereinigen
         data = data.reset_index()  # Multi-Index auflösen
 
@@ -252,14 +187,14 @@ with col3:
             low=data['Low'],
             close=data['Close']
         )])
-        
+
         fig.update_layout(
             title=f"{selected_crypto} Kursverlauf",
             xaxis_title="Datum",
             yaxis_title="Preis in USD",
             xaxis_rangeslider_visible=False
         )
-        
+
         figBar = go.Figure(data=[go.Bar(
             x=data['Date'] if 'Date' in data.columns else data['Datetime'],
             y=data['Volume']
@@ -270,8 +205,6 @@ with col3:
             yaxis_title="Volumen in USD",
             xaxis_rangeslider_visible=False
         )
-
-        
 
         # Chart anzeigen
         st.plotly_chart(fig, use_container_width=True)
