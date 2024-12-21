@@ -152,9 +152,9 @@ fig_sentiment.update_layout(
     xaxis_title="Date",
     yaxis_title="Proportion"
 )
-
+"""
 # Mittig: Kerzendiagramm
-"""fig_candlestick = go.Figure(data=[go.Candlestick(
+fig_candlestick = go.Figure(data=[go.Candlestick(
     x=filtered_data["Date"],
     open=filtered_data["Price"] - np.random.uniform(0, 1000, len(filtered_data)),
     high=filtered_data["Price"] + np.random.uniform(0, 1000, len(filtered_data)),
@@ -166,8 +166,7 @@ fig_candlestick.update_layout(
     xaxis_title="Datum",
     yaxis_title="Preis",
     height=280
-)
-"""
+)"""
 # Layout mit optischen Kästen und Scrollbar
 col3, col4 = st.columns([3, 1])
 
@@ -243,7 +242,7 @@ with col3:
         # Multi-Index bereinigen
         data = data.reset_index()  # Multi-Index auflösen
 
-        print(data.head())
+        print(data.head(10))
 
         # Plotly Candlestick-Chart erstellen
         fig = go.Figure(data=[go.Candlestick(
@@ -253,16 +252,30 @@ with col3:
             low=data['Low'],
             close=data['Close']
         )])
-
+        
         fig.update_layout(
             title=f"{selected_crypto} Kursverlauf",
             xaxis_title="Datum",
             yaxis_title="Preis in USD",
-            xaxis_rangeslider_visible=True
+            xaxis_rangeslider_visible=False
         )
+        
+        figBar = go.Figure(data=[go.Bar(
+            x=data['Date'] if 'Date' in data.columns else data['Datetime'],
+            y=data['Volume']
+        )])
+        figBar.update_layout(
+            title=f"{selected_crypto} Volume",
+            xaxis_title="Datum",
+            yaxis_title="Volumen in USD",
+            xaxis_rangeslider_visible=False
+        )
+
+        
 
         # Chart anzeigen
         st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(figBar, use_container_width=True)
     else:
         st.warning("Bitte wähle ein gültiges Start- und Enddatum aus.")
 
