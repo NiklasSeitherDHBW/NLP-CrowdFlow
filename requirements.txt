@@ -1,7 +1,7 @@
 jupyter
 matplotlib
 pandas
-pytorch
+torch
 scikit-learn
 transformers
 nltk==3.8.1
