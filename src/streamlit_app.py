@@ -87,7 +87,6 @@ def group_sentiment_data(df, start_date, end_date):
     return grouped
 
 
-@st.cache_data
 def download_crypto_data(symbol, start_date, end_date):
     """Fetch cryptocurrency data from Yahoo Finance."""
     data = yf.download(
@@ -191,7 +190,6 @@ def apply_custom_styles():
     )
 
 
-@st.cache_resource
 def load_model():
     model_path = "res/models/nltk_rf.joblib"
     model_url = "https://drive.usercontent.google.com/download?id=1bHl_4G_0W63Q3kj0h1tUijnvtY7BITcn&export=download&authuser=0&confirm=t&uuid=3f546199-99ec-4ff7-9142-0d66ec3084e2&at=APvzH3oWTi5WpBYW23RsVWQNEg27%3A1734888877135"
@@ -209,9 +207,9 @@ def main():
     apply_custom_styles()
     st.title("\U0001f4c8 Cryptocurrency Analysis Dashboard")
 
-    nltk.download("punkt")
-    nltk.download("stopwords")
-    nltk.download("punkt_tab")
+    # nltk.download("punkt")
+    # nltk.download("stopwords")
+    # nltk.download("punkt_tab")
 
     model = load_model()
 
