@@ -11,7 +11,7 @@ on:
 jobs:
   test-run-notebooks-linux:
     name: Test Run Jupyter Notebooks on Ubuntu
-    runs-on: ubuntu-latest
+    runs-on: self-hosted,Linux
 
     steps:
     - name: Checkout repository
@@ -48,7 +48,7 @@ jobs:
 
   test-run-notebooks-windows:
     name: Test Run Jupyter Notebooks on Windows
-    runs-on: windows-latest
+    runs-on: self-hosted,Windows
     timeout-minutes: 30
 
     steps:
