@@ -194,7 +194,12 @@ def load_model():
     model_path = "res/models/nltk_rf.joblib"
     model_url = "https://drive.usercontent.google.com/download?id=1bHl_4G_0W63Q3kj0h1tUijnvtY7BITcn&export=download&authuser=0&confirm=t&uuid=3f546199-99ec-4ff7-9142-0d66ec3084e2&at=APvzH3oWTi5WpBYW23RsVWQNEg27%3A1734888877135"
 
+    st.info(os.listdir("./"))
+    st.info(os.listdir("./res"))
+    st.info(os.listdir("./res/models"))
+
     if not os.path.exists(model_path):
+        pass
         st.warning("Downloading the model file because it couldn't be found locally.")
         os.makedirs(os.path.dirname(model_path), exist_ok=True)
         urllib.request.urlretrieve(model_url, model_path)
