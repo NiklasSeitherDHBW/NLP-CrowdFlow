@@ -1,66 +1,56 @@
-import random
 from datetime import datetime, timedelta
 
 import joblib
-import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 import yfinance as yf
 from plotly.subplots import make_subplots
 
-from utils import utils
-
-# Constants
 CRYPTO_SYMBOLS = {"Bitcoin": "BTC-USD", "Ethereum": "ETH-USD", "Ripple": "XRP-USD"}
+SENTIMENTS = ["positive", "neutral", "negative"]
+SENTIMENT_COLORS = {"positive": "green", "neutral": "gray", "negative": "red"}
 
 
-def generate_mock_data():
-    """Generate mock data for sentiment analysis."""
-    dates = pd.date_range(start="2022-01-01", end=datetime.today(), freq="h")
-    data = {
-        "Date": dates,
-        "Change": np.random.choice(["Positive", "Negative", "Neutral"], len(dates)),
-    }
-    return pd.DataFrame(data)
-
-
-def generate_mock_news():
-    dates = pd.date_range(start="2022-01-01", end=datetime.today(), freq="h")
-    num_entries = len(dates)
-    data = {
-        "date": dates,
-        "title": [f"News Title {i}" for i in range(1, num_entries + 1)],
-        "content": [
-            f"This is a preview of content for news {i}. It gives some details about the topic."
-            for i in range(1, num_entries + 1)
-        ],
-        "url": [f"https://example.com/news{i}" for i in range(1, num_entries + 1)],
-        "source": [
-            random.choice(["Source A", "Source B", "Source C"])
-            for _ in range(num_entries)
-        ],
-        "sentiment": [
-            random.choice(["Positive", "Neutral", "Negative"])
-            for _ in range(num_entries)
-        ],
-    }
-    return pd.DataFrame(data)
+def generate_mock_news(model):
+    # Read the dataset
+    df = pd.read_csv("res/input/cryptonews.csv")
+    
+    # Convert the date column to datetime
+    df["date"] = pd.to_datetime(df["date"], format="mixed")
+    
+    # Calculate the offset in days
+    max_date = df["date"].max()
+    today = pd.Timestamp.now()
+    time_difference = (today - max_date).days
+    offset_days = time_difference
+    
+    # Apply the offset to the date column
+    df["date"] = df["date"] + timedelta(days=offset_days)
+    
+    # Drop the sentiment column
+    df = df.drop(columns=["sentiment"])
+    
+    # Prepare data for prediction
+    X_pred = df.drop(columns=["date", "source", "url"])
+    
+    # Generate sentiment predictions
+    df["sentiment"] = model.pipeline_balanced.predict(X_pred)
+    
+    return df
 
 
 def display_news(news_df):
     # Create a scrollable container
     for _, row in news_df.iterrows():
-        sentiment_color = {"Positive": "green", "Neutral": "gray", "Negative": "red"}[
-            row["sentiment"]
-        ]
+        sentiment_color = SENTIMENT_COLORS[row["sentiment"]]
 
         # HTML structure to display title, content, and sentiment label
         st.markdown(
             f"""
             <div>
                 <h3 style="margin: 0;">{row['title']}</h3>
-                <p style="margin: 5px 0;">{row['content'][:100]}...</p>
+                <p style="margin: 5px 0;">{row['text'][:100]}...</p>
                 <a href="{row['url']}" style="color: #1a73e8; text-decoration: none;">Read more...</a>
             </div>
             <div style="position: absolute; top: 15px; right: 15px; background-color: {sentiment_color}; color: white; 
@@ -87,16 +77,16 @@ def get_frequency(start_date, end_date):
         return "D"
 
 
-def group_data(df, start_date, end_date):
+def group_sentiment_data(df, start_date, end_date):
     """Group data based on the selected date range."""
     filtered_data = df[
-        (df["Date"] >= pd.Timestamp(start_date))
-        & (df["Date"] <= pd.Timestamp(end_date))
+        (df["date"] >= pd.Timestamp(start_date))
+        & (df["date"] <= pd.Timestamp(end_date))
     ]
-    filtered_data.set_index("Date", inplace=True)
+    filtered_data.set_index("date", inplace=True)
     freq = get_frequency(start_date, end_date)
     grouped = (
-        filtered_data.groupby(pd.Grouper(freq=freq))["Change"]
+        filtered_data.groupby(pd.Grouper(freq=freq))["sentiment"]
         .value_counts()
         .unstack(fill_value=0)
     )
@@ -172,17 +162,18 @@ def plot_candlestick_with_separate_volume(data):
 def plot_sentiment(data):
     """Create a stacked bar chart for sentiment analysis."""
     fig = go.Figure()
-    for sentiment, color in zip(
-        ["Positive", "Neutral", "Negative"], ["green", "gray", "red"]
-    ):
+
+    for sentiment in SENTIMENTS:
+        y_values = data[sentiment] if sentiment in data else [0] * len(data)
         fig.add_trace(
             go.Bar(
                 x=data.index,
-                y=data.get(sentiment, 0),
+                y=y_values,
                 name=sentiment,
-                marker_color=color,
+                marker_color=SENTIMENT_COLORS[sentiment],
             )
         )
+
     fig.update_layout(
         barmode="stack",
         title="Sentiment Over Time",
@@ -191,10 +182,10 @@ def plot_sentiment(data):
         legend={"orientation": "h"},
         height=400,
     )
+
     return fig
 
 
-# Streamlit App Layout
 def apply_custom_styles():
     """Apply custom CSS styles."""
     st.markdown(
@@ -204,26 +195,13 @@ def apply_custom_styles():
         .custom-title {font-size: 1.5rem; font-weight: bold; text-align: center; margin-bottom: 10px;}
         .scroll-box {border: 1px solid #ccc; padding: 10px; height: 700px; overflow-y: auto;}
         </style>
-    """,
+        """,
         unsafe_allow_html=True,
     )
 
 
 def main():
     model = joblib.load("res/models/nltk_rf.joblib")
-    X_test = pd.DataFrame(
-        {
-            "date": ["2022-01-01"],
-            "title": ["News Title 1"],
-            "subject": ["News Subject 1"],
-            "text": [
-                "This is a preview of content for news 1. It gives some details about the topic."
-            ],
-            "url": ["https://example.com/news1"],
-            "source": ["Source A"],
-        }
-    )
-    print("Model predicted:", model.predict(X_test))
 
     st.set_page_config(layout="wide")
     apply_custom_styles()
@@ -248,14 +226,17 @@ def main():
 
     start_date, end_date = date_range
 
-    # Mock Sentiment Analysis
-    df = generate_mock_data()
-    sentiment_data = group_data(df, start_date, end_date)
-
     # Cryptocurrency Data
     crypto_data = download_crypto_data(
         CRYPTO_SYMBOLS[selected_crypto], start_date, end_date
     )
+
+    news_df = generate_mock_news(model)
+    filtered_news = news_df[
+        (news_df["date"] >= pd.Timestamp(start_date))
+        & (news_df["date"] <= pd.Timestamp(end_date))
+    ]
+    sentiment_data = group_sentiment_data(filtered_news, start_date, end_date)
 
     # Layout
     col3, col4 = st.columns([2, 1])
@@ -271,11 +252,6 @@ def main():
     with col4:
         st.subheader("Information")
         with st.container(border=True, height=1100):
-            news_df = generate_mock_news()
-            filtered_news = news_df[
-                (news_df["date"] >= pd.Timestamp(start_date))
-                & (news_df["date"] <= pd.Timestamp(end_date))
-            ]
             display_news(filtered_news)
 
 
