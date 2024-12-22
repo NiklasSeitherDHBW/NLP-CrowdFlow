@@ -8,7 +8,7 @@ import yfinance as yf
 from plotly.subplots import make_subplots
 import os
 import urllib.request
-# import nltk
+import nltk
 
 CRYPTO_SYMBOLS = {"Bitcoin": "BTC-USD", "Ethereum": "ETH-USD", "Ripple": "XRP-USD"}
 SENTIMENTS = ["positive", "neutral", "negative"]
@@ -207,9 +207,9 @@ def main():
     apply_custom_styles()
     st.title("\U0001f4c8 Cryptocurrency Analysis Dashboard")
 
-    # nltk.download("punkt")
-    # nltk.download("stopwords")
-    # nltk.download("punkt_tab")
+    nltk.download("punkt")
+    nltk.download("stopwords")
+    nltk.download("punkt_tab")
 
     model = load_model()
 
