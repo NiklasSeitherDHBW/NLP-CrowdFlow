@@ -13,39 +13,30 @@ SENTIMENT_COLORS = {"positive": "green", "neutral": "gray", "negative": "red"}
 
 
 def generate_mock_news(model):
-    # Read the dataset
     df = pd.read_csv("res/input/cryptonews.csv")
     
-    # Convert the date column to datetime
     df["date"] = pd.to_datetime(df["date"], format="mixed")
     
-    # Calculate the offset in days
     max_date = df["date"].max()
     today = pd.Timestamp.now()
     time_difference = (today - max_date).days
     offset_days = time_difference
     
-    # Apply the offset to the date column
     df["date"] = df["date"] + timedelta(days=offset_days)
     
-    # Drop the sentiment column
     df = df.drop(columns=["sentiment"])
     
-    # Prepare data for prediction
     X_pred = df.drop(columns=["date", "source", "url"])
     
-    # Generate sentiment predictions
     df["sentiment"] = model.pipeline_balanced.predict(X_pred)
     
     return df
 
 
 def display_news(news_df):
-    # Create a scrollable container
     for _, row in news_df.iterrows():
         sentiment_color = SENTIMENT_COLORS[row["sentiment"]]
 
-        # HTML structure to display title, content, and sentiment label
         st.markdown(
             f"""
             <div>
@@ -109,16 +100,14 @@ def download_crypto_data(symbol, start_date, end_date):
 
 def plot_candlestick_with_separate_volume(data):
     """Create a candlestick chart with a separate subplot for volume."""
-    # Create subplots with shared x-axis
     fig = make_subplots(
         rows=2,
         cols=1,
         shared_xaxes=True,
-        vertical_spacing=0.1,  # Adjust space between subplots
-        row_heights=[0.7, 0.3],  # Allocate more space for candlesticks
+        vertical_spacing=0.1,
+        row_heights=[0.7, 0.3],
     )
 
-    # Candlestick chart
     fig.add_trace(
         go.Candlestick(
             x=data.index,
@@ -132,19 +121,17 @@ def plot_candlestick_with_separate_volume(data):
         col=1,
     )
 
-    # Volume bars
     fig.add_trace(
         go.Bar(
             x=data.index,
             y=data["Volume"],
             name="Volume",
-            marker_color="lightblue",  # Light blue for volume bars
+            marker_color="lightblue",
         ),
         row=2,
         col=1,
     )
 
-    # Update layout to hide the range slider
     fig.update_layout(
         title=f"Candlestick chart with Volume",
         xaxis=dict(
@@ -152,8 +139,8 @@ def plot_candlestick_with_separate_volume(data):
         ),
         yaxis=dict(title="Price (USD)", side="left"),
         yaxis2=dict(title="Volume", side="left"),
-        height=650,  # Adjust chart height for better visibility
-        showlegend=False,  # Remove legend if unnecessary
+        height=650,
+        showlegend=False,
     )
 
     return fig
@@ -207,7 +194,6 @@ def main():
     apply_custom_styles()
     st.title("\U0001f4c8 Cryptocurrency Analysis Dashboard")
 
-    # Inputs
     col1, col2 = st.columns(2)
     with col1:
         selected_crypto = st.selectbox(
@@ -226,7 +212,6 @@ def main():
 
     start_date, end_date = date_range
 
-    # Cryptocurrency Data
     crypto_data = download_crypto_data(
         CRYPTO_SYMBOLS[selected_crypto], start_date, end_date
     )
@@ -238,7 +223,6 @@ def main():
     ]
     sentiment_data = group_sentiment_data(filtered_news, start_date, end_date)
 
-    # Layout
     col3, col4 = st.columns([2, 1])
     with col3:
         st.subheader("Charts")
