@@ -6,12 +6,15 @@ import plotly.graph_objects as go
 import streamlit as st
 import yfinance as yf
 from plotly.subplots import make_subplots
+import os
+import urllib.request
 
 CRYPTO_SYMBOLS = {"Bitcoin": "BTC-USD", "Ethereum": "ETH-USD", "Ripple": "XRP-USD"}
 SENTIMENTS = ["positive", "neutral", "negative"]
 SENTIMENT_COLORS = {"positive": "green", "neutral": "gray", "negative": "red"}
 
 
+@st.cache_resource
 def generate_mock_news(model):
     df = pd.read_csv("res/input/cryptonews.csv")
     
@@ -84,6 +87,7 @@ def group_sentiment_data(df, start_date, end_date):
     return grouped
 
 
+@st.cache_data
 def download_crypto_data(symbol, start_date, end_date):
     """Fetch cryptocurrency data from Yahoo Finance."""
     data = yf.download(
@@ -187,16 +191,25 @@ def apply_custom_styles():
     )
 
 
-def main():
-    try:
-        model = joblib.load("./res/models/nltk_rf.joblib")
-    except Exception as e:
-        st.error(f"An error occurred while loading the model: {e}")
-        return
+@st.cache_resource
+def load_model():
+    model_path = "res/models/nltk_rf.joblib"
+    model_url = "https://drive.usercontent.google.com/download?id=1bHl_4G_0W63Q3kj0h1tUijnvtY7BITcn&export=download&authuser=0&confirm=t&uuid=3f546199-99ec-4ff7-9142-0d66ec3084e2&at=APvzH3oWTi5WpBYW23RsVWQNEg27%3A1734888877135"
 
+    if not os.path.exists(model_path):
+        st.warning("Downloading the model file because it couldn't be found locally.")
+        os.makedirs(os.path.dirname(model_path), exist_ok=True)
+        urllib.request.urlretrieve(model_url, model_path)
+    
+    return joblib.load(model_path)
+
+
+def main():
     st.set_page_config(layout="wide")
     apply_custom_styles()
     st.title("\U0001f4c8 Cryptocurrency Analysis Dashboard")
+
+    model = load_model()
 
     col1, col2 = st.columns(2)
     with col1:
