@@ -200,7 +200,6 @@ class CustomPipeline:
         self.__y_test_balanced = None
 
         self.pipeline = Pipeline(steps=steps, verbose=True)
-
         self.pipeline_balanced = copy.deepcopy(self.pipeline)
 
     def fit(self, balance):
@@ -268,9 +267,18 @@ class CustomPipeline:
         plt.title(f"Normalized Confusion Matrix for {model_name}")
         plt.show()
 
+    def predict(self, X, balanced_model):
+        """_summary_"""
+        if balanced_model:
+            model = self.pipeline_balanced
+        else:
+            model = self.pipeline
+
+        return model.predict(X)
+
     def dump(self, path, name=None):
         """_summary_"""
         if name is None:
             name = self.__model_name
 
-        joblib.dump(self.pipeline, f"{path}/{name}.joblib")
+        joblib.dump(self, f"{path}/{name}.joblib")
