@@ -201,8 +201,8 @@ def load_model():
     if not os.path.exists(model_path):
         pass
         st.warning("Downloading the model file because it couldn't be found locally.")
-        os.makedirs(os.path.dirname(model_path), exist_ok=True)
-        urllib.request.urlretrieve(model_url, model_path)
+        #os.makedirs(os.path.dirname(model_path), exist_ok=True)
+        #urllib.request.urlretrieve(model_url, model_path)
     
     return joblib.load(model_path)
 
