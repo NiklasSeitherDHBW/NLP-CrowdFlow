@@ -14,6 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Debug model existence
+        run: ls -l res/models/
+      - name: Debug folder
+        run: ls -l ./
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
