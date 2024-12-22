@@ -1,18 +1,18 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-from datetime import datetime, timedelta
-import yfinance as yf
 import random
+from datetime import datetime, timedelta
+
+import joblib
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+import streamlit as st
+import yfinance as yf
+from plotly.subplots import make_subplots
+
+from utils import utils
 
 # Constants
-CRYPTO_SYMBOLS = {
-    "Bitcoin": "BTC-USD",
-    "Ethereum": "ETH-USD",
-    "Ripple": "XRP-USD"
-}
+CRYPTO_SYMBOLS = {"Bitcoin": "BTC-USD", "Ethereum": "ETH-USD", "Ripple": "XRP-USD"}
 
 
 def generate_mock_data():
@@ -20,7 +20,7 @@ def generate_mock_data():
     dates = pd.date_range(start="2022-01-01", end=datetime.today(), freq="h")
     data = {
         "Date": dates,
-        "Change": np.random.choice(["Positive", "Negative", "Neutral"], len(dates))
+        "Change": np.random.choice(["Positive", "Negative", "Neutral"], len(dates)),
     }
     return pd.DataFrame(data)
 
@@ -31,10 +31,19 @@ def generate_mock_news():
     data = {
         "date": dates,
         "title": [f"News Title {i}" for i in range(1, num_entries + 1)],
-        "content": [f"This is a preview of content for news {i}. It gives some details about the topic." for i in range(1, num_entries + 1)],
+        "content": [
+            f"This is a preview of content for news {i}. It gives some details about the topic."
+            for i in range(1, num_entries + 1)
+        ],
         "url": [f"https://example.com/news{i}" for i in range(1, num_entries + 1)],
-        "source": [random.choice(["Source A", "Source B", "Source C"]) for _ in range(num_entries)],
-        "sentiment": [random.choice(["Positive", "Neutral", "Negative"]) for _ in range(num_entries)]
+        "source": [
+            random.choice(["Source A", "Source B", "Source C"])
+            for _ in range(num_entries)
+        ],
+        "sentiment": [
+            random.choice(["Positive", "Neutral", "Negative"])
+            for _ in range(num_entries)
+        ],
     }
     return pd.DataFrame(data)
 
@@ -42,8 +51,9 @@ def generate_mock_news():
 def display_news(news_df):
     # Create a scrollable container
     for _, row in news_df.iterrows():
-        sentiment_color = {"Positive": "green",
-                           "Neutral": "gray", "Negative": "red"}[row["sentiment"]]
+        sentiment_color = {"Positive": "green", "Neutral": "gray", "Negative": "red"}[
+            row["sentiment"]
+        ]
 
         # HTML structure to display title, content, and sentiment label
         st.markdown(
@@ -58,7 +68,7 @@ def display_news(news_df):
                 {row['sentiment']}
             </div>
             """,
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
 
         st.markdown("---")
@@ -79,23 +89,30 @@ def get_frequency(start_date, end_date):
 
 def group_data(df, start_date, end_date):
     """Group data based on the selected date range."""
-    filtered_data = df[(df["Date"] >= pd.Timestamp(start_date))
-                       & (df["Date"] <= pd.Timestamp(end_date))]
+    filtered_data = df[
+        (df["Date"] >= pd.Timestamp(start_date))
+        & (df["Date"] <= pd.Timestamp(end_date))
+    ]
     filtered_data.set_index("Date", inplace=True)
     freq = get_frequency(start_date, end_date)
-    grouped = filtered_data.groupby(pd.Grouper(freq=freq))[
-        "Change"].value_counts().unstack(fill_value=0)
+    grouped = (
+        filtered_data.groupby(pd.Grouper(freq=freq))["Change"]
+        .value_counts()
+        .unstack(fill_value=0)
+    )
     return grouped
 
 
 def download_crypto_data(symbol, start_date, end_date):
     """Fetch cryptocurrency data from Yahoo Finance."""
-    data = yf.download(symbol, interval="60m",
-                       start=start_date, end=end_date, multi_level_index=False)
+    data = yf.download(
+        symbol, interval="60m", start=start_date, end=end_date, multi_level_index=False
+    )
 
     freq = get_frequency(start_date, end_date)
     data = data.groupby(pd.Grouper(level=0, freq=freq)).agg(
-        {'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'})
+        {"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"}
+    )
 
     return data
 
@@ -104,29 +121,38 @@ def plot_candlestick_with_separate_volume(data):
     """Create a candlestick chart with a separate subplot for volume."""
     # Create subplots with shared x-axis
     fig = make_subplots(
-        rows=2, cols=1,
+        rows=2,
+        cols=1,
         shared_xaxes=True,
         vertical_spacing=0.1,  # Adjust space between subplots
         row_heights=[0.7, 0.3],  # Allocate more space for candlesticks
     )
 
     # Candlestick chart
-    fig.add_trace(go.Candlestick(
-        x=data.index,
-        open=data["Open"],
-        high=data["High"],
-        low=data["Low"],
-        close=data["Close"],
-        name="Price"
-    ), row=1, col=1)
+    fig.add_trace(
+        go.Candlestick(
+            x=data.index,
+            open=data["Open"],
+            high=data["High"],
+            low=data["Low"],
+            close=data["Close"],
+            name="Price",
+        ),
+        row=1,
+        col=1,
+    )
 
     # Volume bars
-    fig.add_trace(go.Bar(
-        x=data.index,
-        y=data["Volume"],
-        name="Volume",
-        marker_color="lightblue",  # Light blue for volume bars
-    ), row=2, col=1)
+    fig.add_trace(
+        go.Bar(
+            x=data.index,
+            y=data["Volume"],
+            name="Volume",
+            marker_color="lightblue",  # Light blue for volume bars
+        ),
+        row=2,
+        col=1,
+    )
 
     # Update layout to hide the range slider
     fig.update_layout(
@@ -146,39 +172,76 @@ def plot_candlestick_with_separate_volume(data):
 def plot_sentiment(data):
     """Create a stacked bar chart for sentiment analysis."""
     fig = go.Figure()
-    for sentiment, color in zip(["Positive", "Neutral", "Negative"], ["green", "gray", "red"]):
-        fig.add_trace(go.Bar(x=data.index, y=data.get(
-            sentiment, 0), name=sentiment, marker_color=color))
-    fig.update_layout(barmode="stack", title="Sentiment Over Time", xaxis_title="Date",
-                      yaxis_title="Counts", legend={"orientation": "h"}, height=400)
+    for sentiment, color in zip(
+        ["Positive", "Neutral", "Negative"], ["green", "gray", "red"]
+    ):
+        fig.add_trace(
+            go.Bar(
+                x=data.index,
+                y=data.get(sentiment, 0),
+                name=sentiment,
+                marker_color=color,
+            )
+        )
+    fig.update_layout(
+        barmode="stack",
+        title="Sentiment Over Time",
+        xaxis_title="Date",
+        yaxis_title="Counts",
+        legend={"orientation": "h"},
+        height=400,
+    )
     return fig
 
 
 # Streamlit App Layout
 def apply_custom_styles():
     """Apply custom CSS styles."""
-    st.markdown("""
+    st.markdown(
+        """
         <style>
         .block-container {padding: 1rem;}
         .custom-title {font-size: 1.5rem; font-weight: bold; text-align: center; margin-bottom: 10px;}
         .scroll-box {border: 1px solid #ccc; padding: 10px; height: 700px; overflow-y: auto;}
         </style>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
 
 def main():
+    model = joblib.load("res/models/nltk_rf.joblib")
+    X_test = pd.DataFrame(
+        {
+            "date": ["2022-01-01"],
+            "title": ["News Title 1"],
+            "subject": ["News Subject 1"],
+            "text": [
+                "This is a preview of content for news 1. It gives some details about the topic."
+            ],
+            "url": ["https://example.com/news1"],
+            "source": ["Source A"],
+        }
+    )
+    print("Model predicted:", model.predict(X_test))
+
     st.set_page_config(layout="wide")
     apply_custom_styles()
-    st.title("\U0001F4C8 Cryptocurrency Analysis Dashboard")
+    st.title("\U0001f4c8 Cryptocurrency Analysis Dashboard")
 
     # Inputs
     col1, col2 = st.columns(2)
     with col1:
         selected_crypto = st.selectbox(
-            "Select Cryptocurrency:", list(CRYPTO_SYMBOLS.keys()))
+            "Select Cryptocurrency:", list(CRYPTO_SYMBOLS.keys())
+        )
     with col2:
-        date_range = st.date_input("Select Date Range:", [datetime.today() - timedelta(days=30), datetime.today()],
-                                   min_value=datetime(2022, 1, 1), max_value=datetime.today())
+        date_range = st.date_input(
+            "Select Date Range:",
+            [datetime.today() - timedelta(days=30), datetime.today()],
+            min_value=datetime(2022, 1, 1),
+            max_value=datetime.today(),
+        )
     if len(date_range) != 2:
         st.warning("Please select a valid date range.")
         return
@@ -191,24 +254,28 @@ def main():
 
     # Cryptocurrency Data
     crypto_data = download_crypto_data(
-        CRYPTO_SYMBOLS[selected_crypto], start_date, end_date)
+        CRYPTO_SYMBOLS[selected_crypto], start_date, end_date
+    )
 
     # Layout
     col3, col4 = st.columns([2, 1])
     with col3:
         st.subheader("Charts")
         with st.container(height=1100, border=True):
-            st.plotly_chart(plot_candlestick_with_separate_volume(
-                crypto_data), use_container_width=True)
-            st.plotly_chart(plot_sentiment(sentiment_data),
-                            use_container_width=True)
+            st.plotly_chart(
+                plot_candlestick_with_separate_volume(crypto_data),
+                use_container_width=True,
+            )
+            st.plotly_chart(plot_sentiment(sentiment_data), use_container_width=True)
 
     with col4:
         st.subheader("Information")
         with st.container(border=True, height=1100):
             news_df = generate_mock_news()
-            filtered_news = news_df[(news_df["date"] >= pd.Timestamp(
-                start_date)) & (news_df["date"] <= pd.Timestamp(end_date))]
+            filtered_news = news_df[
+                (news_df["date"] >= pd.Timestamp(start_date))
+                & (news_df["date"] <= pd.Timestamp(end_date))
+            ]
             display_news(filtered_news)
 
 
