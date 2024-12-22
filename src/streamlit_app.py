@@ -14,7 +14,6 @@ SENTIMENTS = ["positive", "neutral", "negative"]
 SENTIMENT_COLORS = {"positive": "green", "neutral": "gray", "negative": "red"}
 
 
-@st.cache_resource
 def generate_mock_news(model):
     df = pd.read_csv("res/input/cryptonews.csv")
     
