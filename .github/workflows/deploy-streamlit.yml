@@ -17,16 +17,22 @@ jobs:
         with:
           lfs: true
 
-      - name: Git LFS Pull 
+      - name: Git LFS Pull
         run: git lfs pull
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$PYTHONPATH:$(pwd)/src" >> $GITHUB_ENV
+
       - name: Install dependencies
         run: pip install -r requirements.txt
-        
+
+      - name: Debug Python Path
+        run: python -c "import sys; print(sys.path)"
+
       - name: Run Streamlit App
         uses: streamlit/streamlit-app-action@v0.0.3
         with:
