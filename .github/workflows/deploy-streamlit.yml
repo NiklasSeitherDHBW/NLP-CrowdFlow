@@ -27,7 +27,7 @@ jobs:
           ruff: true
           pytest-args: -v --junit-xml=test-results.xml
       - if: always()
-        uses: pmei  er/pytest-results-action@v0.6.0
+        uses: pmeier/pytest-results-action@v0.6.0
         with:
           path: test-results.xml
           summary: true
