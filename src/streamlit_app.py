@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 import joblib
+import nltk
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
@@ -14,22 +15,22 @@ SENTIMENT_COLORS = {"positive": "green", "neutral": "gray", "negative": "red"}
 
 def generate_mock_news(model):
     df = pd.read_csv("res/input/cryptonews.csv")
-    
+
     df["date"] = pd.to_datetime(df["date"], format="mixed")
-    
+
     max_date = df["date"].max()
     today = pd.Timestamp.now()
     time_difference = (today - max_date).days
     offset_days = time_difference
-    
+
     df["date"] = df["date"] + timedelta(days=offset_days)
-    
+
     df = df.drop(columns=["sentiment"])
-    
+
     X_pred = df.drop(columns=["date", "source", "url"])
-    
+
     df["sentiment"] = model.pipeline_balanced.predict(X_pred)
-    
+
     return df
 
 
@@ -188,8 +189,6 @@ def apply_custom_styles():
 
 
 def main():
-    model = joblib.load("res/models/nltk_rf.joblib")
-
     st.set_page_config(layout="wide")
     apply_custom_styles()
     st.title("\U0001f4c8 Cryptocurrency Analysis Dashboard")
@@ -215,6 +214,11 @@ def main():
     crypto_data = download_crypto_data(
         CRYPTO_SYMBOLS[selected_crypto], start_date, end_date
     )
+
+    model = joblib.load("res/models/nltk_rf.joblib")
+    nltk.download("punkt")
+    nltk.download("stopwords")
+    nltk.download("punkt_tab")
 
     news_df = generate_mock_news(model)
     filtered_news = news_df[
