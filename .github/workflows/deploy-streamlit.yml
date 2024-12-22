@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   streamlit:
-    runs-on: self-hosted,Linux
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
         with:
