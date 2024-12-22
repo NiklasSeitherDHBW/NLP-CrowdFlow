@@ -133,7 +133,7 @@ def plot_candlestick_with_separate_volume(data):
     )
 
     fig.update_layout(
-        title=f"Candlestick chart with Volume",
+        title = "Candlestick chart with Volume",
         xaxis=dict(
             rangeslider=dict(visible=False)  # Disable the range slider
         ),
