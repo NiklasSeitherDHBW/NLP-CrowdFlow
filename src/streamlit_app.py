@@ -188,7 +188,11 @@ def apply_custom_styles():
 
 
 def main():
-    model = joblib.load("./res/models/nltk_rf.joblib")
+    try:
+        model = joblib.load("./res/models/nltk_rf.joblib")
+    except Exception as e:
+        st.error(f"An error occurred while loading the model: {e}")
+        return
 
     st.set_page_config(layout="wide")
     apply_custom_styles()
