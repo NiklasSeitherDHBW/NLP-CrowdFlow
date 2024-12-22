@@ -70,7 +70,7 @@ class NLTKTokenizer(BaseEstimator, TransformerMixin):
     """
 
     def __init__(self):
-        # nltk.download("punkt", quiet=True)
+        nltk.download("punkt", quiet=False)
         nltk.download("stopwords", quiet=True)
         nltk.download("punkt_tab", quiet=True)
         self.stop_words = set(nltk.corpus.stopwords.words("english"))
