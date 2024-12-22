@@ -188,7 +188,7 @@ def apply_custom_styles():
 
 
 def main():
-    model = joblib.load("res/models/nltk_rf.joblib")
+    model = joblib.load("./res/models/nltk_rf.joblib")
 
     st.set_page_config(layout="wide")
     apply_custom_styles()
