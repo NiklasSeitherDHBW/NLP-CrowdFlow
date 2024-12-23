@@ -38,20 +38,29 @@ def retrieve_news(selected_crypto, model):
 
 
 def display_news(news_df):
-    for _, row in news_df.iterrows():
+    df = news_df.sort_values("date", ascending=False)
+
+    for _, row in df.iterrows():
         sentiment_color = SENTIMENT_COLORS[row["sentiment"]]
 
+        # Truncate the text for display
+        text = row["text"][:400]
+        if len(row["text"]) > 400:
+            text += "..."
+
+        # Include a container for title and sentiment, making sure the sentiment does not overlap
         st.markdown(
             f"""
-            <div>
-                <h3 style="margin: 0;">{row['title']}</h3>
-                <p style="margin: 5px 0;">{row['text'][:300]}...</p>
-                <a href="{row['url']}" style="color: #1a73e8; text-decoration: none;">Read more...</a>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; flex-grow: 1;">{row['title']}</h3>
+                <div style="background-color: {sentiment_color}; color: white; 
+                            padding: 5px 10px; border-radius: 15px; font-size: 12px; font-weight: bold;">
+                    {row['sentiment']}
+                </div>
             </div>
-            <div style="position: absolute; top: 15px; right: 15px; background-color: {sentiment_color}; color: white; 
-                        padding: 5px 10px; border-radius: 15px; font-size: 12px; font-weight: bold;">
-                {row['sentiment']}
-            </div>
+            <small style="color: #555; font-style: italic;">Published on: {row['date']}</small>
+            <p style="margin: 10px 0;">{text}</p>
+            <a href="{row['url']}" style="color: #1a73e8; text-decoration: none;">Read more...</a>
             """,
             unsafe_allow_html=True,
         )
@@ -81,7 +90,7 @@ def group_sentiment_data(df, start_date, end_date):
     filtered_data.set_index("date", inplace=True)
     freq = get_frequency(start_date, end_date)
     grouped = (
-        filtered_data.groupby(pd.Grouper(freq=freq))["sentiment"]
+        filtered_data.groupby(pd.Grouper(level=0, freq=freq))["sentiment"]
         .value_counts()
         .unstack(fill_value=0)
     )
@@ -179,12 +188,21 @@ def plot_sentiment(data, min_date, max_date):
             )
         )
 
+    max_y_value = data.sum(axis=1).max()  # Calculate maximum sum of counts for scaling
+
     fig.update_layout(
         barmode="stack",
         title="Sentiment Over Time",
         xaxis=dict(range=[min_date, max_date]),
         xaxis_title="Date",
-        yaxis_title="Counts",
+        yaxis=dict(
+            title="Counts",
+            tickmode="linear" if max_y_value <= 10 else "auto",
+            tick0=0,
+            dtick=1 if max_y_value <= 10 else None,
+            tickformat=".0f",
+            range=[0, max_y_value + 1],
+        ),
         legend={"orientation": "h"},
         height=400,
     )
@@ -246,6 +264,10 @@ def main():
         & (news_df["date"] <= pd.Timestamp(end_date))
     ]
     sentiment_data = group_sentiment_data(filtered_news, start_date, end_date)
+
+    common_index = crypto_data.index.union(sentiment_data.index)
+    crypto_data = crypto_data.reindex(common_index, method=None)
+    sentiment_data = sentiment_data.reindex(common_index, fill_value=0)
 
     min_date = min(crypto_data.index.min(), sentiment_data.index.min())
     max_date = max(crypto_data.index.max(), sentiment_data.index.max())
