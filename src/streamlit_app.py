@@ -13,21 +13,24 @@ SENTIMENTS = ["positive", "neutral", "negative"]
 SENTIMENT_COLORS = {"positive": "green", "neutral": "gray", "negative": "red"}
 
 
-def generate_mock_news(model):
-    df = pd.read_csv("res/input/cryptonews.csv")
+def retrieve_news(selected_crypto, model):
+    crypto_news = yf.Ticker(CRYPTO_SYMBOLS[selected_crypto]).get_news(1000)
 
-    df["date"] = pd.to_datetime(df["date"], format="mixed")
+    df = pd.DataFrame(
+        [
+            {
+                "date": item["content"].get("pubDate", ""),
+                "title": item["content"].get("title", ""),
+                "text": item["content"].get("summary", ""),
+                "url": item["clickThroughUrl"]["url"] if item.get("clickThroughUrl") else "",
+            }
+            for item in crypto_news
+        ]
+    )
 
-    max_date = df["date"].max()
-    today = pd.Timestamp.now()
-    time_difference = (today - max_date).days
-    offset_days = time_difference
+    df["date"] = pd.to_datetime(df["date"])
 
-    df["date"] = df["date"] + timedelta(days=offset_days)
-
-    df = df.drop(columns=["sentiment"])
-
-    X_pred = df.drop(columns=["date", "source", "url"])
+    X_pred = df.drop(columns=["date"])
 
     df["sentiment"] = model.pipeline_balanced.predict(X_pred)
 
@@ -42,7 +45,7 @@ def display_news(news_df):
             f"""
             <div>
                 <h3 style="margin: 0;">{row['title']}</h3>
-                <p style="margin: 5px 0;">{row['text'][:100]}...</p>
+                <p style="margin: 5px 0;">{row['text'][:300]}...</p>
                 <a href="{row['url']}" style="color: #1a73e8; text-decoration: none;">Read more...</a>
             </div>
             <div style="position: absolute; top: 15px; right: 15px; background-color: {sentiment_color}; color: white; 
@@ -87,9 +90,22 @@ def group_sentiment_data(df, start_date, end_date):
 
 def download_crypto_data(symbol, start_date, end_date):
     """Fetch cryptocurrency data from Yahoo Finance."""
-    data = yf.download(
-        symbol, interval="60m", start=start_date, end=end_date, multi_level_index=False
+    if pd.Timedelta(end_date - start_date).days < 8:
+        interval = "1h"
+    elif pd.Timedelta(end_date - start_date).days < 60:
+        interval = "60m"
+    else:
+        interval = "1d"
+
+    data = (
+        yf.Ticker(symbol)
+        .history(interval=interval, start=start_date, end=end_date)
+        .reset_index()
     )
+
+    date_col = "Datetime" if "Datetime" in data.columns else "Date"    
+    data[date_col] = pd.to_datetime(data[date_col])
+    data.set_index(date_col, inplace=True)
 
     freq = get_frequency(start_date, end_date)
     data = data.groupby(pd.Grouper(level=0, freq=freq)).agg(
@@ -99,7 +115,7 @@ def download_crypto_data(symbol, start_date, end_date):
     return data
 
 
-def plot_candlestick_with_separate_volume(data):
+def plot_candlestick_with_separate_volume(data, min_date, max_date):
     """Create a candlestick chart with a separate subplot for volume."""
     fig = make_subplots(
         rows=2,
@@ -134,8 +150,9 @@ def plot_candlestick_with_separate_volume(data):
     )
 
     fig.update_layout(
-        title=f"Candlestick chart with Volume",
+        title="Candlestick chart with Volume",
         xaxis=dict(
+            range=[min_date, max_date],  # Set the range of x-axis
             rangeslider=dict(visible=False)  # Disable the range slider
         ),
         yaxis=dict(title="Price (USD)", side="left"),
@@ -147,7 +164,7 @@ def plot_candlestick_with_separate_volume(data):
     return fig
 
 
-def plot_sentiment(data):
+def plot_sentiment(data, min_date, max_date):
     """Create a stacked bar chart for sentiment analysis."""
     fig = go.Figure()
 
@@ -165,6 +182,7 @@ def plot_sentiment(data):
     fig.update_layout(
         barmode="stack",
         title="Sentiment Over Time",
+        xaxis=dict(range=[min_date, max_date]),
         xaxis_title="Date",
         yaxis_title="Counts",
         legend={"orientation": "h"},
@@ -209,7 +227,9 @@ def main():
         st.warning("Please select a valid date range.")
         return
 
-    start_date, end_date = date_range
+    start_date, end_date = [
+        pd.Timestamp(date).tz_localize("UTC") for date in date_range
+    ]
 
     crypto_data = download_crypto_data(
         CRYPTO_SYMBOLS[selected_crypto], start_date, end_date
@@ -220,22 +240,25 @@ def main():
     nltk.download("stopwords")
     nltk.download("punkt_tab")
 
-    news_df = generate_mock_news(model)
+    news_df = retrieve_news(selected_crypto, model)
     filtered_news = news_df[
         (news_df["date"] >= pd.Timestamp(start_date))
         & (news_df["date"] <= pd.Timestamp(end_date))
     ]
     sentiment_data = group_sentiment_data(filtered_news, start_date, end_date)
 
-    col3, col4 = st.columns([2, 1])
+    min_date = min(crypto_data.index.min(), sentiment_data.index.min())
+    max_date = max(crypto_data.index.max(), sentiment_data.index.max())
+
+    col3, col4 = st.columns([3, 2])
     with col3:
         st.subheader("Charts")
         with st.container(height=1100, border=True):
             st.plotly_chart(
-                plot_candlestick_with_separate_volume(crypto_data),
+                plot_candlestick_with_separate_volume(crypto_data, min_date, max_date),
                 use_container_width=True,
             )
-            st.plotly_chart(plot_sentiment(sentiment_data), use_container_width=True)
+            st.plotly_chart(plot_sentiment(sentiment_data, min_date, max_date), use_container_width=True)
 
     with col4:
         st.subheader("Information")
