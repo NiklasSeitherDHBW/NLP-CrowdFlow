@@ -1,19 +1,19 @@
 """_summary_"""
 
 import copy
+import json
 import re
 import string
 
 import joblib
 import matplotlib.pyplot as plt
 import nltk
+import ollama
 import pandas as pd
+from tqdm import tqdm
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.metrics import (
-    ConfusionMatrixDisplay,
-    classification_report,
-    confusion_matrix,
-)
+from sklearn.metrics import (ConfusionMatrixDisplay, classification_report,
+                             confusion_matrix)
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.utils import resample
@@ -187,50 +187,54 @@ class CustomPipeline:
         self.df = df
         self.features = features
         self.target = target
-        self.__model_name = model_name
+        self._model_name = model_name
 
-        self.__X_train = None
-        self.__X_test = None
-        self.__y_train = None
-        self.__y_test = None
+        self._X_train = None
+        self._X_test = None
+        self._y_train = None
+        self._y_test = None
 
-        self.__X_train_balanced = None
-        self.__X_test_balanced = None
-        self.__y_train_balanced = None
-        self.__y_test_balanced = None
+        self._X_train_balanced = None
+        self._X_test_balanced = None
+        self._y_train_balanced = None
+        self._y_test_balanced = None
 
         self.pipeline = Pipeline(steps=steps, verbose=True)
         self.pipeline_balanced = copy.deepcopy(self.pipeline)
 
-    def fit(self, balance):
-        """_summary_"""
-        if balance:
-            df = Utils.balance_dataset(self.df, self.target)
+        self.train_test_split()
 
-            (
-                self.__X_train_balanced,
-                self.__X_test_balanced,
-                self.__y_train_balanced,
-                self.__y_test_balanced,
-            ) = train_test_split(
+    def train_test_split(self):
+        df = Utils.balance_dataset(self.df, self.target)
+
+        (
+            self._X_train_balanced,
+            self._X_test_balanced,
+            self._y_train_balanced,
+            self._y_test_balanced,
+        ) = train_test_split(
+            df[self.features],
+            df[self.target],
+            test_size=0.2,
+            random_state=config.RANDOM_STATE,
+        )
+
+        df = self.df
+        self._X_train, self._X_test, self._y_train, self._y_test = (
+            train_test_split(
                 df[self.features],
                 df[self.target],
                 test_size=0.2,
                 random_state=config.RANDOM_STATE,
             )
-            self.pipeline_balanced.fit(self.__X_train_balanced, self.__y_train_balanced)
+        )
 
+    def fit(self, balance):
+        """_summary_"""
+        if balance:
+            self.pipeline_balanced.fit(self._X_train_balanced, self._y_train_balanced)
         else:
-            df = self.df
-            self.__X_train, self.__X_test, self.__y_train, self.__y_test = (
-                train_test_split(
-                    df[self.features],
-                    df[self.target],
-                    test_size=0.2,
-                    random_state=config.RANDOM_STATE,
-                )
-            )
-            self.pipeline.fit(self.__X_train, self.__y_train)
+            self.pipeline.fit(self._X_train, self._y_train)
 
     def evaluate(self, balanced_model, balanced_test_data):
         """_summary_"""
@@ -240,28 +244,24 @@ class CustomPipeline:
             model = self.pipeline
 
         if balanced_test_data:
-            X_test = self.__X_test_balanced
-            y_test = self.__y_test_balanced
+            X_test = self._X_test_balanced
+            y_test = self._y_test_balanced
         else:
-            X_test = self.__X_test
-            y_test = self.__y_test
+            X_test = self._X_test
+            y_test = self._y_test
 
         y_pred = model.predict(X_test)
 
-        model_name = f'{self.__model_name}_{"balanced" if balanced_model else "unbalanced"} model_{"balanced" if balanced_test_data else "unbalanced"} test data'
+        model_name = f'{self._model_name}_{"balanced" if balanced_model else "unbalanced"} model_{"balanced" if balanced_test_data else "unbalanced"} test data'
 
         print(f"Classification Report for {model_name}:")
-        print(classification_report(y_test, y_pred))
+        print(classification_report(y_test, y_pred, labels=config.SENTIMENTS))
 
         print(f"Confusion Matrix for {model_name}:")
-        cm = confusion_matrix(y_test, y_pred, normalize="true")
+        cm = confusion_matrix(y_test, y_pred, labels=config.SENTIMENTS, normalize="true")
         print(cm)
 
-        # Display normalized confusion matrix as a graphic
-        labels = sorted(list(set(y_test)))  # set(y_train) |
-        print(labels)
-
-        disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=labels)
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=config.SENTIMENTS)
         disp.plot(cmap=plt.cm.Blues)
 
         plt.title(f"Normalized Confusion Matrix for {model_name}")
@@ -279,6 +279,72 @@ class CustomPipeline:
     def dump(self, path, name=None):
         """_summary_"""
         if name is None:
-            name = self.__model_name
+            name = self._model_name
 
         joblib.dump(self, f"{path}/{name}.joblib")
+
+
+class OllamaPipeline(CustomPipeline):
+    def __init__(self, df, features, target, ollama_model, model_name=None):
+        steps = []
+        super().__init__(df, features, target, steps, model_name)
+
+        self.ollama_model = ollama_model
+
+        ollama.pull(self.ollama_model)
+        self.system_instructions = (
+            "You are a helpful assistant specialized in analyzing news articles. "
+            "Provide concise and accurate responses in JSON format."
+        )
+
+    def fit(self):
+        """_summary_"""
+        raise NotImplementedError("OllamaPipeline: No training required for this pipeline.")
+
+    def evaluate(self):
+        X_test = self._X_test
+        y_test = self._y_test
+
+        y_pred = self.predict(X_test)
+
+        display(X_test, y_test, y_pred)
+
+        model_name = self._model_name
+
+        print(f"Classification Report for {model_name}:")
+        print(classification_report(y_test, y_pred, labels=config.SENTIMENTS))
+
+        print(f"Confusion Matrix for {model_name}:")
+        cm = confusion_matrix(y_test, y_pred, labels=config.SENTIMENTS, normalize="true")
+        print(cm)
+
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=config.SENTIMENTS)
+        disp.plot(cmap=plt.cm.Blues)
+
+        plt.title(f"Normalized Confusion Matrix for {model_name}")
+        plt.show()
+    
+    def predict(self, X):
+        y_pred = []
+        for index, row in tqdm(X.iterrows(), desc="Analyzing sentiment with Ollama"):
+            try:
+                prompt = (
+                    f"{self.system_instructions}\n\n"
+                    f"Analyze the following blog article and return a JSON object with the following fields:\n"
+                    f"main_core_thoughts (a summary of the main core thoughts),\n"
+                    f"sentiment_analysis (sentiment as positive, neutral, or negative),\n"
+                    f"confidence_level (confidence score from 0 to 1),\n"
+                    f"topics (a list of up to 3 main topics discussed in the blog article).\n\n"
+                )
+                for feature in self.features:
+                    prompt += f"{feature}: {row[feature]}\n"
+
+                response = ollama.generate(model=self.ollama_model, prompt=prompt, stream=False, format="json")
+                response = json.loads(response.model_dump_json())
+                response = json.loads(response["response"])["sentiment_analysis"]
+
+                y_pred.append(response)
+            except Exception as e:
+                print(f"Error for index {index}: {e}")
+                y_pred.append(pd.NA)
+        return y_pred

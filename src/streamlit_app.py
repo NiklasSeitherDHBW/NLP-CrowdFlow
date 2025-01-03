@@ -32,7 +32,7 @@ def retrieve_news(selected_crypto, model):
 
     X_pred = df.drop(columns=["date"])
 
-    df["sentiment"] = model.pipeline_balanced.predict(X_pred)
+    df["sentiment"] = model.predict(X_pred, True)
 
     return df
 
