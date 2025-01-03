@@ -11,3 +11,4 @@ seaborn
 plotly
 streamlit
 yfinance
+ruff

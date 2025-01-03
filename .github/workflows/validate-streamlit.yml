@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   streamlit:
-    runs-on: ["self-hosted", "Linux"]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,7 +27,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
+        
       - name: Set PYTHONPATH
         run: echo "PYTHONPATH=$PYTHONPATH:$(pwd)/src" >> $GITHUB_ENV
 
@@ -41,3 +41,4 @@ jobs:
         uses: streamlit/streamlit-app-action@v0.0.3
         with:
           app-path: src/streamlit_app.py
+          ruff: true
