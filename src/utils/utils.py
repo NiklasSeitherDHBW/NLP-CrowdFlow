@@ -309,8 +309,6 @@ class OllamaPipeline(CustomPipeline):
         y_pred = self.predict(X_test)
         y_pred = pd.Series(y_pred, index=y_test.index)
 
-        display(X_test, y_test, y_pred)
-
         y_test_bak = y_test.copy(deep=True)
         valid_indices = y_pred.apply(lambda x: x in config.SENTIMENTS)
         y_test = y_test[valid_indices].reset_index(drop=True)
