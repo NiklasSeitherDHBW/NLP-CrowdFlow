@@ -1,7 +1,7 @@
 jupyter
 matplotlib
 pandas
-torch
+torch==2.5.1
 scikit-learn
 transformers
 nltk==3.8.1
@@ -13,4 +13,3 @@ streamlit
 yfinance
 ruff
 ollama
-torch
