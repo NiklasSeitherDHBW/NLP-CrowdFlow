@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import nltk
 import ollama
 import pandas as pd
-from tqdm import tqdm
+import tqdm
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.metrics import (ConfusionMatrixDisplay, classification_report,
                              confusion_matrix)
@@ -302,14 +302,20 @@ class OllamaPipeline(CustomPipeline):
         raise NotImplementedError("OllamaPipeline: No training required for this pipeline.")
 
     def evaluate(self):
+        model_name = self._model_name
+
         X_test = self._X_test
         y_test = self._y_test
-
         y_pred = self.predict(X_test)
+        y_pred = pd.Series(y_pred, index=y_test.index)
 
         display(X_test, y_test, y_pred)
 
-        model_name = self._model_name
+        y_test_bak = y_test.copy(deep=True)
+        valid_indices = y_pred.apply(lambda x: x in config.SENTIMENTS)
+        y_test = y_test[valid_indices].reset_index(drop=True)
+        y_pred = y_pred[valid_indices].reset_index(drop=True)
+        print(f"There were {len(y_test_bak) - len(y_test)}/{len(y_test_bak)} invlaid predictions. Removed them from the evaluation. New test set size: {len(y_test)}")
 
         print(f"Classification Report for {model_name}:")
         print(classification_report(y_test, y_pred, labels=config.SENTIMENTS))
@@ -325,8 +331,10 @@ class OllamaPipeline(CustomPipeline):
         plt.show()
     
     def predict(self, X):
+        errors = []
         y_pred = []
-        for index, row in tqdm(X.iterrows(), desc="Analyzing sentiment with Ollama"):
+        
+        for index, row in tqdm.tqdm(X.iterrows(), desc="Analyzing sentiment with Ollama"):
             try:
                 prompt = (
                     f"{self.system_instructions}\n\n"
@@ -344,7 +352,13 @@ class OllamaPipeline(CustomPipeline):
                 response = json.loads(response["response"])["sentiment_analysis"]
 
                 y_pred.append(response)
+
             except Exception as e:
-                print(f"Error for index {index}: {e}")
-                y_pred.append(pd.NA)
+                y_pred.append("error")
+                errors.append((index, str(e)))
+                
+
+        for error in errors:
+            print(f"Error for index {error[0]}: {error[1]}")
+
         return y_pred
