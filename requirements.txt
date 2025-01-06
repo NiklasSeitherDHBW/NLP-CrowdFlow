@@ -12,3 +12,4 @@ plotly
 streamlit
 yfinance
 ruff
+ollama
