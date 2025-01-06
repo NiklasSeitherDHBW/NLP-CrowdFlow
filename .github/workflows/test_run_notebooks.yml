@@ -38,7 +38,7 @@ jobs:
 
     - name: Run Jupyter Notebooks
       run: |
-        for notebook in $(find ./src -name "*.ipynb"); do
+        for notebook in $(find ./src -name "*.ipynb" ! -path "./src/archive/*"); do
           echo "Running $notebook"
           jupyter nbconvert --to notebook --execute "$notebook" --output "$(basename "${notebook%.ipynb}_linux_executed.ipynb")"
           echo ""
