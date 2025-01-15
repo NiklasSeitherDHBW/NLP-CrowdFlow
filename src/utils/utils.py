@@ -183,11 +183,13 @@ class CompoundWordSplitter(BaseEstimator, TransformerMixin):
 class CustomPipeline:
     """_summary_"""
 
-    def __init__(self, df, features, target, steps, model_name=None):
+    def __init__(self, df, features, target, steps, df_cv=None, model_name=None):
         self.df = df
         self.features = features
         self.target = target
+        self.df_cv = df_cv
         self._model_name = model_name
+
 
         self._X_train = None
         self._X_test = None
@@ -236,36 +238,57 @@ class CustomPipeline:
         else:
             self.pipeline.fit(self._X_train, self._y_train)
 
-    def evaluate(self, balanced_model, balanced_test_data):
-        """_summary_"""
+
+    def evaluate(self, balanced_model):
+        """Evaluate model performance and display confusion matrices."""
+
         if balanced_model:
             model = self.pipeline_balanced
         else:
             model = self.pipeline
 
-        if balanced_test_data:
-            X_test = self._X_test_balanced
-            y_test = self._y_test_balanced
-        else:
-            X_test = self._X_test
-            y_test = self._y_test
+        X_test = self._X_test
+        y_test = self._y_test
 
         y_pred = model.predict(X_test)
 
-        model_name = f'{self._model_name}_{"balanced" if balanced_model else "unbalanced"} model_{"balanced" if balanced_test_data else "unbalanced"} test data'
+        model_name = f'{self._model_name} - {"balanced" if balanced_model else "unbalanced"} train data'
 
+        # Plotting confusion matrices
+        if self.df_cv is not None:
+            fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+
+            # Confusion Matrix for Test Data
+            cm_test = confusion_matrix(y_test, y_pred, normalize="true")
+            disp_test = ConfusionMatrixDisplay(confusion_matrix=cm_test)
+            disp_test.plot(ax=axes[0], cmap=plt.cm.Blues)
+            axes[0].set_title(f"Test Data - {model_name}")
+
+            # Confusion Matrix for Cross-Validation Data
+            X_cv = self.df_cv[self.features]
+            y_cv = self.df_cv[self.target]
+            y_cv_pred = model.predict(X_cv)
+
+            cm_cv = confusion_matrix(y_cv, y_cv_pred, normalize="true")
+            disp_cv = ConfusionMatrixDisplay(confusion_matrix=cm_cv)
+            disp_cv.plot(ax=axes[1], cmap=plt.cm.Blues)
+            axes[1].set_title(f"CV Data - {model_name}")
+
+            plt.tight_layout()
+            plt.show()
+
+        else:
+            # Only Test Data Confusion Matrix
+            cm = confusion_matrix(y_test, y_pred, normalize="true")
+            disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+            disp.plot(cmap=plt.cm.Blues)
+            plt.title(f"Normalized Confusion Matrix for {model_name}")
+            plt.show()
+
+        # Classification Report
         print(f"Classification Report for {model_name}:")
-        print(classification_report(y_test, y_pred))# , labels=config.SENTIMENTS))
+        print(classification_report(y_test, y_pred))
 
-        print(f"Confusion Matrix for {model_name}:")
-        cm = confusion_matrix(y_test, y_pred, normalize="true")# , labels=config.SENTIMENTS)
-        print(cm)
-
-        disp = ConfusionMatrixDisplay(confusion_matrix=cm) #, display_labels=config.SENTIMENTS)
-        disp.plot(cmap=plt.cm.Blues)
-
-        plt.title(f"Normalized Confusion Matrix for {model_name}")
-        plt.show()
 
     def predict(self, X, balanced_model):
         """_summary_"""
