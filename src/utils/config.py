@@ -3,4 +3,4 @@
 
 RANDOM_STATE = 42
 
-SENTIMENTS = ['positive', 'neutral', 'negative']
+SENTIMENTS = ["0", "1", "2"]

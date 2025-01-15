@@ -255,13 +255,13 @@ class CustomPipeline:
         model_name = f'{self._model_name}_{"balanced" if balanced_model else "unbalanced"} model_{"balanced" if balanced_test_data else "unbalanced"} test data'
 
         print(f"Classification Report for {model_name}:")
-        print(classification_report(y_test, y_pred, labels=config.SENTIMENTS))
+        print(classification_report(y_test, y_pred))# , labels=config.SENTIMENTS))
 
         print(f"Confusion Matrix for {model_name}:")
-        cm = confusion_matrix(y_test, y_pred, labels=config.SENTIMENTS, normalize="true")
+        cm = confusion_matrix(y_test, y_pred, normalize="true")# , labels=config.SENTIMENTS)
         print(cm)
 
-        disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=config.SENTIMENTS)
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm) #, display_labels=config.SENTIMENTS)
         disp.plot(cmap=plt.cm.Blues)
 
         plt.title(f"Normalized Confusion Matrix for {model_name}")
