@@ -18,6 +18,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.utils import resample
 
+from wordcloud import WordCloud
+
 from . import config
 
 
@@ -26,31 +28,22 @@ class Utils:
 
     @staticmethod
     def balance_dataset(df, target):
-        """_summary_
-
-        Args:
-            df (_type_): _description_
-            features (_type_): _description_
-            target (_type_): _description_
-
-        Returns:
-            _type_: _description_
-        """
-        # Create a second training dataset with balanced classes
+        # Create a second training dataset with balanced classes using undersampling
         target_counts = df[target].value_counts()
 
         # Get the category with the least amount of samples
-        max_count = target_counts.max()
+        min_count = target_counts.min()
 
         balanced_dfs = []
         for sentiment, count in target_counts.items():
             df_tmp = df[df[target] == sentiment]
-            if count < max_count:
+            if count > min_count:
+                # Undersample the majority classes
                 df_resampled = resample(
                     df_tmp,
-                    replace=True,
-                    n_samples=max_count,
-                    random_state=config.RANDOM_STATE,
+                    replace=False,  # No replacement for undersampling
+                    n_samples=min_count,
+                    random_state=42  # Replace with config.RANDOM_STATE if needed
                 )
                 balanced_dfs.append(df_resampled)
             else:
@@ -59,109 +52,133 @@ class Utils:
         df_balanced = pd.concat(balanced_dfs)
 
         return df_balanced
+    
+    @staticmethod
+    def load_data():
+        data_dir = "../res/prepared/"
+        df = pd.read_csv(data_dir + config.TRAIN_SET)
+        df_cv = pd.read_csv(data_dir + config.CV_SET)
+        config.SENTIMENTS = df[config.TARGET].unique().tolist()
+        return df, df_cv
+
+
+    @staticmethod
+    def plot_historgram(df, column):
+        fig, ax = plt.subplots(figsize=(5, 5))  # Korrektur: plt.subplots() statt plt.subplot()
+        if pd.api.types.is_numeric_dtype(df[column]):
+            df[column].plot.hist(ax=ax, bins=50)
+        else:
+            df[column].value_counts().plot.bar(ax=ax)
+        ax.set_title(column.capitalize())
+        ax.set_xlabel(column.capitalize())
+        ax.set_ylabel("Count")
+
+        plt.tight_layout()
+        plt.show()
+
+
+    @staticmethod
+    def plot_wordcloud(df, column, nltk_extra_stopwords=False):
+        tokenizer = NLTKTokenizer(nltk_extra_stopwords)
+        words = []
+
+        df.apply(lambda row: words.extend(tokenizer.tokenize(row[column]).split(" ")), axis=1)
+
+        word_freq = pd.Series(words).value_counts()
+        print(word_freq)
+
+        wordcloud = WordCloud(width=2000, height=1000, background_color='white')
+        wordcloud.generate_from_frequencies(word_freq)
+
+        # plot wordcloud
+        plt.figure(figsize=(10, 10))
+        plt.imshow(wordcloud)
+        plt.axis('off')
+
+        return word_freq
 
 
 class NLTKTokenizer(BaseEstimator, TransformerMixin):
-    """_summary_
+    def __init__(self, extra_stop_words=False, lemmatize=False, remove_urls=False):
+        self.extra_stop_words = extra_stop_words
 
-    Args:
-        BaseEstimator (_type_): _description_
-        TransformerMixin (_type_): _description_
-    """
-
-    def __init__(self):
         nltk.download("punkt", quiet=True)
         nltk.download("stopwords", quiet=True)
         nltk.download("punkt_tab", quiet=True)
+
         self.stop_words = set(nltk.corpus.stopwords.words("english"))
+        if self.extra_stop_words:
+            with open("../res/stopwords.txt", "r") as f:
+                self.stop_words.update(f.read().splitlines())
+
+        self.lemmatizer = nltk.stem.WordNetLemmatizer()
+        
+        self.lemmatize = lemmatize
+        self.remove_urls = remove_urls
 
     def fit(self, x, y=None):
-        """_summary_
-
-        Args:
-            X (_type_): _description_
-            y (_type_, optional): _description_. Defaults to None.
-
-        Returns:
-            _type_: _description_
-        """
         return self
 
     def transform(self, x):
-        """_summary_
-
-        Args:
-            X (_type_): _description_
-
-        Returns:
-            _type_: _description_
-        """
         return x.apply(self.tokenize)
 
     def tokenize(self, text):
-        """_summary_
+        # Normalization
+        text = str(text)
+        
+        # text = re.sub(r'\W', ' ', str(text))  # only alphanumeric characters
+        
+        if self.remove_urls:
+            url_pattern = re.compile(r'https?://\S+|www\.\S+')
+            text = url_pattern.sub("", text)
+        
+        tokens = nltk.word_tokenize(text.lower())
 
-        Args:
-            text (_type_): _description_
+        # Stopwords
+        filtered_tokens = [t for t in tokens if t not in self.stop_words and t not in string.punctuation]
 
-        Returns:
-            _type_: _description_
-        """
-        text = re.sub(r"\W", " ", str(text))
-        tokens = nltk.tokenize.word_tokenize(text.lower())
-        filtered_tokens = [
-            t
-            for t in tokens
-            if t not in self.stop_words and t not in string.punctuation
-        ]
-        return " ".join(filtered_tokens)
+        if self.lemmatize:
+            # POS-Tagging and Lemmatization (excluding nouns)
+            filtered_tokens = [
+                self.lemmatize_with_pos(token, pos)
+                for token, pos in nltk.pos_tag(filtered_tokens)
+                # if not pos.startswith('N')
+            ]
+
+        return ' '.join(filtered_tokens)
+
+    def lemmatize_with_pos(self, token, pos):
+        # convert NLTK-POS-Tags in WordNet-POS-Tags
+        pos = self.get_wordnet_pos(pos)
+        return self.lemmatizer.lemmatize(token, pos=pos) if pos else self.lemmatizer.lemmatize(token)
+
+    def get_wordnet_pos(self, nltk_pos):
+        # convert NLTK-POS-Tags in WordNet-POS-Tags
+        if nltk_pos.startswith('J'):
+            return 'a'  # adjectives
+        elif nltk_pos.startswith('V'):
+            return 'v'  # verbs
+        elif nltk_pos.startswith('N'):
+            return 'n'  # nouns
+        elif nltk_pos.startswith('R'):
+            return 'r'  # adverbs
+        else:
+            return None
 
 
 class CompoundWordSplitter(BaseEstimator, TransformerMixin):
-    """_summary_
-
-    Args:
-        BaseEstimator (_type_): _description_
-        TransformerMixin (_type_): _description_
-    """
-
     def __init__(self):
         pass
 
     def __split_compound(self, word):
-        """_summary_
-
-        Args:
-            word (_type_): _description_
-
-        Returns:
-            _type_: _description_
-        """
         # Simple Heuristic for segmenting compound words
         # This is a placeholder and should be replaced with a more robust method
         return re.findall(r"[A-Z]?[a-z]+|[A-Z]+(?=[A-Z]|$)", word)
 
     def fit(self, X, y=None):
-        """_summary_
-
-        Args:
-            X (_type_): _description_
-            y (_type_, optional): _description_. Defaults to None.
-
-        Returns:
-            _type_: _description_
-        """
         return self
 
     def split_compounds(self, text):
-        """_summary_
-
-        Args:
-            text (_type_): _description_
-
-        Returns:
-            _type_: _description_
-        """
         words = text.split()
         split_words = []
         for word in words:
@@ -169,14 +186,6 @@ class CompoundWordSplitter(BaseEstimator, TransformerMixin):
         return " ".join(split_words)
 
     def transform(self, x):
-        """_summary_
-
-        Args:
-            X (_type_): _description_
-
-        Returns:
-            _type_: _description_
-        """
         return x.apply(self.split_compounds)
 
 
@@ -189,7 +198,6 @@ class CustomPipeline:
         self.target = target
         self.df_cv = df_cv
         self._model_name = model_name
-
 
         self._X_train = None
         self._X_test = None
@@ -254,13 +262,14 @@ class CustomPipeline:
 
         model_name = f'{self._model_name} - {"balanced" if balanced_model else "unbalanced"} train data'
 
+        print(f"Classification Report for {model_name}:")
         # Plotting confusion matrices
         if self.df_cv is not None:
             fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
             # Confusion Matrix for Test Data
-            cm_test = confusion_matrix(y_test, y_pred, normalize="true")
-            disp_test = ConfusionMatrixDisplay(confusion_matrix=cm_test)
+            cm_test = confusion_matrix(y_test, y_pred, normalize="true", labels=config.SENTIMENTS)
+            disp_test = ConfusionMatrixDisplay(confusion_matrix=cm_test, display_labels=config.SENTIMENTS)
             disp_test.plot(ax=axes[0], cmap=plt.cm.Blues)
             axes[0].set_title(f"Test Data - {model_name}")
 
@@ -269,25 +278,27 @@ class CustomPipeline:
             y_cv = self.df_cv[self.target]
             y_cv_pred = model.predict(X_cv)
 
-            cm_cv = confusion_matrix(y_cv, y_cv_pred, normalize="true")
-            disp_cv = ConfusionMatrixDisplay(confusion_matrix=cm_cv)
+            cm_cv = confusion_matrix(y_cv, y_cv_pred, normalize="true", labels=config.SENTIMENTS)
+            disp_cv = ConfusionMatrixDisplay(confusion_matrix=cm_cv, display_labels=config.SENTIMENTS)
             disp_cv.plot(ax=axes[1], cmap=plt.cm.Blues)
             axes[1].set_title(f"CV Data - {model_name}")
 
+            print("Classification Report - Validation set\n", classification_report(y_test, y_pred))
+            print("Classification Report - Crossvalidation set\n", classification_report(y_cv, y_cv_pred))
+
             plt.tight_layout()
             plt.show()
+            
 
         else:
             # Only Test Data Confusion Matrix
-            cm = confusion_matrix(y_test, y_pred, normalize="true")
-            disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+            cm = confusion_matrix(y_test, y_pred, normalize="true", labels=config.SENTIMENTS)
+            disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=config.SENTIMENTS)
             disp.plot(cmap=plt.cm.Blues)
             plt.title(f"Normalized Confusion Matrix for {model_name}")
             plt.show()
-
-        # Classification Report
-        print(f"Classification Report for {model_name}:")
-        print(classification_report(y_test, y_pred))
+        
+            print(classification_report(y_test, y_pred))
 
 
     def predict(self, X, balanced_model):
