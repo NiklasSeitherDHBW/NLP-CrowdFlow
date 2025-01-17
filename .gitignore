@@ -163,3 +163,4 @@ cython_debug/
 
 res/output/
 res/prepared/
+res/models/GoogleNews-vectors-negative300.bin
