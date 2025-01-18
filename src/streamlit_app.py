@@ -253,7 +253,7 @@ def main():
         CRYPTO_SYMBOLS[selected_crypto], start_date, end_date
     )
 
-    model = joblib.load("res/models/nltk_rf_1.joblib")
+    model = joblib.load("res/models/nltk_rf_w2v_1.joblib")
     nltk.download("punkt")
     nltk.download("stopwords")
     nltk.download("punkt_tab")
