@@ -9,3 +9,5 @@ TARGET = "label"
 
 TRAIN_SET = "cryptonews.csv"
 CV_SET = "indian_financial_news.csv"
+
+MODEL_DIR = "../res/models/"
