@@ -32,7 +32,7 @@ def retrieve_news(selected_crypto, model):
 
     X_pred = df.drop(columns=["date"])
 
-    df["sentiment"] = model.pipeline_balanced.predict(X_pred)
+    df["sentiment"] = model.predict(X_pred, True)
 
     return df
 
@@ -253,7 +253,7 @@ def main():
         CRYPTO_SYMBOLS[selected_crypto], start_date, end_date
     )
 
-    model = joblib.load("res/models/nltk_rf.joblib")
+    model = joblib.load("res/models/nltk_rf_1.joblib")
     nltk.download("punkt")
     nltk.download("stopwords")
     nltk.download("punkt_tab")
