@@ -17,6 +17,8 @@ from sklearn.metrics import (ConfusionMatrixDisplay, classification_report,
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.utils import resample
+import numpy as np
+from gensim.models import KeyedVectors
 
 from wordcloud import WordCloud
 
@@ -41,9 +43,9 @@ class Utils:
                 # Undersample the majority classes
                 df_resampled = resample(
                     df_tmp,
-                    replace=False,  # No replacement for undersampling
+                    replace=False,
                     n_samples=min_count,
-                    random_state=42  # Replace with config.RANDOM_STATE if needed
+                    random_state=config.RANDOM_STATE
                 )
                 balanced_dfs.append(df_resampled)
             else:
@@ -64,7 +66,7 @@ class Utils:
 
     @staticmethod
     def plot_historgram(df, column):
-        fig, ax = plt.subplots(figsize=(5, 5))  # Korrektur: plt.subplots() statt plt.subplot()
+        fig, ax = plt.subplots(figsize=(5, 5)) 
         if pd.api.types.is_numeric_dtype(df[column]):
             df[column].plot.hist(ax=ax, bins=50)
         else:
@@ -107,9 +109,18 @@ class NLTKTokenizer(BaseEstimator, TransformerMixin):
         nltk.download("punkt_tab", quiet=True)
 
         self.stop_words = set(nltk.corpus.stopwords.words("english"))
+        self.crypto_words = set()
+        self.company_words = set()
+    
         if self.extra_stop_words:
             with open("../res/stopwords.txt", "r") as f:
                 self.stop_words.update(f.read().splitlines())
+            
+            with open("../res/crypto_words.txt", "r") as f:
+                self.crypto_words.update(f.read().splitlines())
+                
+            with open("../res/company_words.txt", "r") as f:
+                self.company_words.update(f.read().splitlines())
 
         self.lemmatizer = nltk.stem.WordNetLemmatizer()
         
@@ -122,15 +133,65 @@ class NLTKTokenizer(BaseEstimator, TransformerMixin):
     def transform(self, x):
         return x.apply(self.tokenize)
 
+    def replace_substrings(self, text, words_to_replace, replace_with):
+        sentence = text.split(" ")
+        for i in range(len(sentence)):
+            if sentence[i] in words_to_replace:
+                sentence[i] = replace_with
+            
+        return " ".join(sentence)
+
     def tokenize(self, text):
         # Normalization
         text = str(text)
         
-        # text = re.sub(r'\W', ' ', str(text))  # only alphanumeric characters
+        encoding_errors = {
+            "â€™": "'",
+            "â€œ": '"',
+            "â€": '"',
+            "â€˜": "'",
+            "â€”": "-",
+            "â€“": "-",
+            "â€¢": "•",
+            "â€¦": "...",
+            "\\xa0":"",
+            "\\x9d": "",
+            "\\x9c": "",
+            "\\x9f": "",
+            "\\x8f": "",
+            "\\x99": "",
+            "\\x93": "",
+            "\\x92": "",
+            "\\x91": "",
+            "\\x96": "",
+            "\\x94": "",
+            "\\x85": "",
+            "\\x82": "",
+            "\\x81": "",
+            "\\x80": "",
+            "\\x9a": "",
+            "\\x87": "",
+            "\\x86": "",
+            "\\x84": "",
+            "\\x83": "",
+            r"ÃƒÂ¼": "ü",
+            r"\r": "",
+            r"\n": "",
+            r"\t": "",
+        }
+        
+        for key, value in encoding_errors.items():
+            text = text.replace(key, value)
+        
+        if self.extra_stop_words:
+            text = self.replace_substrings(text, self.crypto_words, 'TICKER')
+            text = self.replace_substrings(text, self.company_words, 'TICKER')
         
         if self.remove_urls:
             url_pattern = re.compile(r'https?://\S+|www\.\S+')
             text = url_pattern.sub("", text)
+        
+        text = re.sub(r'\W', ' ', str(text))  # only alphanumeric characters
         
         tokens = nltk.word_tokenize(text.lower())
 
@@ -164,6 +225,26 @@ class NLTKTokenizer(BaseEstimator, TransformerMixin):
             return 'r'  # adverbs
         else:
             return None
+
+
+class Word2VecTransformer(BaseEstimator, TransformerMixin):
+    def __init__(self, model_name='word2vec-google-news-300'):
+        self.model_name = model_name
+        self.model = KeyedVectors.load_word2vec_format(r'../res\models\GoogleNews-vectors-negative300.bin', binary=True)
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        return np.array([self._average_vector(text) for text in X])
+
+    def _average_vector(self, text):
+        words = text.split()
+        vectors = [self.model[word] for word in words if word in self.model]
+        if vectors:
+            return np.mean(vectors, axis=0)
+        else:
+            return np.zeros(self.model.vector_size)
 
 
 class CompoundWordSplitter(BaseEstimator, TransformerMixin):
