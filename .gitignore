@@ -164,3 +164,4 @@ cython_debug/
 res/output/
 res/prepared/
 res/models/
+!res/models/nltk_tfidf_rf_1.joblib
