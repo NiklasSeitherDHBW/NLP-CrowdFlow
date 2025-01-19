@@ -6,7 +6,7 @@ scikit-learn
 transformers
 nltk==3.8.1
 numpy
-scipy
+scipy<1.13.0
 seaborn
 plotly
 streamlit
