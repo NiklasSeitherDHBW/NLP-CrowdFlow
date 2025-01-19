@@ -90,14 +90,12 @@ class Utils:
         tokenizer = NLTKTokenizer(nltk_extra_stopwords)
         words = []
 
-        df.apply(lambda row: words.extend(
-            tokenizer.tokenize(row[column]).split(" ")), axis=1)
+        df.apply(lambda row: words.extend(tokenizer.tokenize(row[column]).split(" ")), axis=1)
 
         word_freq = pd.Series(words).value_counts()
         print(word_freq)
 
-        wordcloud = WordCloud(width=2000, height=1000,
-                              background_color='white')
+        wordcloud = WordCloud(width=2000, height=1000, background_color='white')
         wordcloud.generate_from_frequencies(word_freq)
 
         # plot wordcloud
@@ -241,8 +239,7 @@ class NLTKTokenizer(BaseEstimator, TransformerMixin):
 class Word2VecTransformer(BaseEstimator, TransformerMixin):
     def __init__(self, model_name='word2vec-google-news-300'):
         self.model_name = model_name
-        self.model = KeyedVectors.load_word2vec_format(
-            r'../res\models\GoogleNews-vectors-negative300.bin', binary=True)
+        self.model = KeyedVectors.load_word2vec_format(r'../res\models\GoogleNews-vectors-negative300.bin', binary=True)
 
     def fit(self, X, y=None):
         return self
@@ -265,7 +262,6 @@ class CompoundWordSplitter(BaseEstimator, TransformerMixin):
 
     def __split_compound(self, word):
         # Simple Heuristic for segmenting compound words
-        # This is a placeholder and should be replaced with a more robust method
         return re.findall(r"[A-Z]?[a-z]+|[A-Z]+(?=[A-Z]|$)", word)
 
     def fit(self, X, y=None):
@@ -353,8 +349,7 @@ class CustomPipeline:
 
         y_pred = model.predict(X_test)
 
-        model_name = f'{
-            self._model_name} - {"balanced" if balanced_model else "unbalanced"} train data'
+        model_name = f'{self._model_name} - {"balanced" if balanced_model else "unbalanced"} train data'
 
         print(f"Classification Report for {model_name}:")
         # Plotting confusion matrices
@@ -362,10 +357,8 @@ class CustomPipeline:
             fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
             # Confusion Matrix for Test Data
-            cm_test = confusion_matrix(
-                y_test, y_pred, normalize="true", labels=config.SENTIMENTS)
-            disp_test = ConfusionMatrixDisplay(
-                confusion_matrix=cm_test, display_labels=config.SENTIMENTS)
+            cm_test = confusion_matrix(y_test, y_pred, normalize="true", labels=config.SENTIMENTS)
+            disp_test = ConfusionMatrixDisplay(confusion_matrix=cm_test, display_labels=config.SENTIMENTS)
             disp_test.plot(ax=axes[0], cmap=plt.cm.Blues)
             axes[0].set_title(f"Test Data - {model_name}")
 
@@ -376,25 +369,20 @@ class CustomPipeline:
 
             cm_cv = confusion_matrix(
                 y_cv, y_cv_pred, normalize="true", labels=config.SENTIMENTS)
-            disp_cv = ConfusionMatrixDisplay(
-                confusion_matrix=cm_cv, display_labels=config.SENTIMENTS)
+            disp_cv = ConfusionMatrixDisplay(confusion_matrix=cm_cv, display_labels=config.SENTIMENTS)
             disp_cv.plot(ax=axes[1], cmap=plt.cm.Blues)
             axes[1].set_title(f"CV Data - {model_name}")
 
-            print("Classification Report - Validation set\n",
-                  classification_report(y_test, y_pred))
-            print("Classification Report - Crossvalidation set\n",
-                  classification_report(y_cv, y_cv_pred))
+            print("Classification Report - Validation set\n", classification_report(y_test, y_pred))
+            print("Classification Report - Crossvalidation set\n", classification_report(y_cv, y_cv_pred))
 
             plt.tight_layout()
             plt.show()
 
         else:
             # Only Test Data Confusion Matrix
-            cm = confusion_matrix(
-                y_test, y_pred, normalize="true", labels=config.SENTIMENTS)
-            disp = ConfusionMatrixDisplay(
-                confusion_matrix=cm, display_labels=config.SENTIMENTS)
+            cm = confusion_matrix(y_test, y_pred, normalize="true", labels=config.SENTIMENTS)
+            disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=config.SENTIMENTS)
             disp.plot(cmap=plt.cm.Blues)
             plt.title(f"Normalized Confusion Matrix for {model_name}")
             plt.show()
@@ -437,8 +425,7 @@ class OllamaPipeline(CustomPipeline):
 
     def fit(self):
         """_summary_"""
-        raise NotImplementedError(
-            "OllamaPipeline: No training required for this pipeline.")
+        raise NotImplementedError("OllamaPipeline: No training required for this pipeline.")
 
     def evaluate(self):
         model_name = self._model_name
@@ -452,23 +439,21 @@ class OllamaPipeline(CustomPipeline):
         valid_indices = y_pred.apply(lambda x: x in config.SENTIMENTS)
         y_test = y_test[valid_indices].reset_index(drop=True)
         y_pred = y_pred[valid_indices].reset_index(drop=True)
-        print(f"There were {len(y_test_bak) - len(y_test)}/{len(y_test_bak)
-                                                            } invlaid predictions. Removed them from the evaluation. New test set size: {len(y_test)}")
+        print(f"There were {len(y_test_bak) - len(y_test)}/{len(y_test_bak)} invlaid predictions. Removed them from the evaluation. New test set size: {len(y_test)}")
 
         print(f"Classification Report for {model_name}:")
         print(classification_report(y_test, y_pred, labels=config.SENTIMENTS))
 
         print(f"Confusion Matrix for {model_name}:")
-        cm = confusion_matrix(
-            y_test, y_pred, labels=config.SENTIMENTS, normalize="true")
+        cm = confusion_matrix(y_test, y_pred, labels=config.SENTIMENTS, normalize="true")
         print(cm)
 
-        disp = ConfusionMatrixDisplay(
-            confusion_matrix=cm, display_labels=config.SENTIMENTS)
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=config.SENTIMENTS)
         disp.plot(cmap=plt.cm.Blues)
 
         plt.title(f"Normalized Confusion Matrix for {model_name}")
         plt.show()
+
 
     def predict(self, X):
         errors = []
@@ -487,11 +472,9 @@ class OllamaPipeline(CustomPipeline):
                 for feature in self.features:
                     prompt += f"{feature}: {row[feature]}\n"
 
-                response = ollama.generate(
-                    model=self.ollama_model, prompt=prompt, stream=False, format="json")
+                response = ollama.generate(model=self.ollama_model, prompt=prompt, stream=False, format="json")
                 response = json.loads(response.model_dump_json())
-                response = json.loads(response["response"])[
-                    "sentiment_analysis"]
+                response = json.loads(response["response"])["sentiment_analysis"]
 
                 y_pred.append(response)
 
