@@ -2,24 +2,24 @@
 
 import copy
 import json
+import os
 import re
 import string
 
 import joblib
 import matplotlib.pyplot as plt
 import nltk
+import numpy as np
 import ollama
 import pandas as pd
 import tqdm
+from gensim.models import KeyedVectors
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.metrics import (ConfusionMatrixDisplay, classification_report,
                              confusion_matrix)
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.utils import resample
-import numpy as np
-from gensim.models import KeyedVectors
-
 from wordcloud import WordCloud
 
 from . import config
@@ -54,19 +54,26 @@ class Utils:
         df_balanced = pd.concat(balanced_dfs)
 
         return df_balanced
-    
+
     @staticmethod
-    def load_data():
+    def load_data(drop_neutral=False):
         data_dir = "../res/prepared/"
         df = pd.read_csv(data_dir + config.TRAIN_SET)
         df_cv = pd.read_csv(data_dir + config.CV_SET)
-        config.SENTIMENTS = df[config.TARGET].unique().tolist()
-        return df, df_cv
 
+        df[config.TARGET] = df[config.TARGET].astype(str)
+
+        if drop_neutral:
+            df = df[df[config.TARGET] != "neutral"]
+            df_cv = df_cv[df_cv[config.TARGET] != "neutral"]
+
+        config.SENTIMENTS = df[config.TARGET].unique().tolist()
+
+        return df, df_cv
 
     @staticmethod
     def plot_historgram(df, column):
-        fig, ax = plt.subplots(figsize=(5, 5)) 
+        fig, ax = plt.subplots(figsize=(5, 5))
         if pd.api.types.is_numeric_dtype(df[column]):
             df[column].plot.hist(ax=ax, bins=50)
         else:
@@ -77,7 +84,6 @@ class Utils:
 
         plt.tight_layout()
         plt.show()
-
 
     @staticmethod
     def plot_wordcloud(df, column, nltk_extra_stopwords=False):
@@ -107,23 +113,25 @@ class NLTKTokenizer(BaseEstimator, TransformerMixin):
         nltk.download("punkt", quiet=True)
         nltk.download("stopwords", quiet=True)
         nltk.download("punkt_tab", quiet=True)
+        nltk.download("averaged_perceptron_tagger", quiet=True)
+        nltk.download('wordnet', quiet=True)
 
         self.stop_words = set(nltk.corpus.stopwords.words("english"))
         self.crypto_words = set()
         self.company_words = set()
-    
+
         if self.extra_stop_words:
             with open("../res/stopwords.txt", "r") as f:
                 self.stop_words.update(f.read().splitlines())
-            
+
             with open("../res/crypto_words.txt", "r") as f:
                 self.crypto_words.update(f.read().splitlines())
-                
+
             with open("../res/company_words.txt", "r") as f:
                 self.company_words.update(f.read().splitlines())
 
         self.lemmatizer = nltk.stem.WordNetLemmatizer()
-        
+
         self.lemmatize = lemmatize
         self.remove_urls = remove_urls
 
@@ -138,13 +146,13 @@ class NLTKTokenizer(BaseEstimator, TransformerMixin):
         for i in range(len(sentence)):
             if sentence[i] in words_to_replace:
                 sentence[i] = replace_with
-            
+
         return " ".join(sentence)
 
     def tokenize(self, text):
         # Normalization
         text = str(text)
-        
+
         encoding_errors = {
             "â€™": "'",
             "â€œ": '"',
@@ -154,7 +162,7 @@ class NLTKTokenizer(BaseEstimator, TransformerMixin):
             "â€“": "-",
             "â€¢": "•",
             "â€¦": "...",
-            "\\xa0":"",
+            "\\xa0": "",
             "\\x9d": "",
             "\\x9c": "",
             "\\x9f": "",
@@ -179,24 +187,25 @@ class NLTKTokenizer(BaseEstimator, TransformerMixin):
             r"\n": "",
             r"\t": "",
         }
-        
+
         for key, value in encoding_errors.items():
             text = text.replace(key, value)
-        
+
         if self.extra_stop_words:
             text = self.replace_substrings(text, self.crypto_words, 'TICKER')
             text = self.replace_substrings(text, self.company_words, 'TICKER')
-        
+
         if self.remove_urls:
             url_pattern = re.compile(r'https?://\S+|www\.\S+')
             text = url_pattern.sub("", text)
-        
+
         text = re.sub(r'\W', ' ', str(text))  # only alphanumeric characters
-        
+
         tokens = nltk.word_tokenize(text.lower())
 
         # Stopwords
-        filtered_tokens = [t for t in tokens if t not in self.stop_words and t not in string.punctuation]
+        filtered_tokens = [
+            t for t in tokens if t not in self.stop_words and t not in string.punctuation]
 
         if self.lemmatize:
             # POS-Tagging and Lemmatization (excluding nouns)
@@ -253,7 +262,6 @@ class CompoundWordSplitter(BaseEstimator, TransformerMixin):
 
     def __split_compound(self, word):
         # Simple Heuristic for segmenting compound words
-        # This is a placeholder and should be replaced with a more robust method
         return re.findall(r"[A-Z]?[a-z]+|[A-Z]+(?=[A-Z]|$)", word)
 
     def fit(self, X, y=None):
@@ -323,10 +331,10 @@ class CustomPipeline:
     def fit(self, balance):
         """_summary_"""
         if balance:
-            self.pipeline_balanced.fit(self._X_train_balanced, self._y_train_balanced)
+            self.pipeline_balanced.fit(
+                self._X_train_balanced, self._y_train_balanced)
         else:
             self.pipeline.fit(self._X_train, self._y_train)
-
 
     def evaluate(self, balanced_model):
         """Evaluate model performance and display confusion matrices."""
@@ -359,7 +367,8 @@ class CustomPipeline:
             y_cv = self.df_cv[self.target]
             y_cv_pred = model.predict(X_cv)
 
-            cm_cv = confusion_matrix(y_cv, y_cv_pred, normalize="true", labels=config.SENTIMENTS)
+            cm_cv = confusion_matrix(
+                y_cv, y_cv_pred, normalize="true", labels=config.SENTIMENTS)
             disp_cv = ConfusionMatrixDisplay(confusion_matrix=cm_cv, display_labels=config.SENTIMENTS)
             disp_cv.plot(ax=axes[1], cmap=plt.cm.Blues)
             axes[1].set_title(f"CV Data - {model_name}")
@@ -369,7 +378,6 @@ class CustomPipeline:
 
             plt.tight_layout()
             plt.show()
-            
 
         else:
             # Only Test Data Confusion Matrix
@@ -378,9 +386,8 @@ class CustomPipeline:
             disp.plot(cmap=plt.cm.Blues)
             plt.title(f"Normalized Confusion Matrix for {model_name}")
             plt.show()
-        
-            print(classification_report(y_test, y_pred))
 
+            print(classification_report(y_test, y_pred))
 
     def predict(self, X, balanced_model):
         """_summary_"""
@@ -391,11 +398,15 @@ class CustomPipeline:
 
         return model.predict(X)
 
-    def dump(self, path, name=None):
+    def dump(self, path=None, name=None):
         """_summary_"""
         if name is None:
             name = self._model_name
-
+        if path is None:
+            path = config.MODEL_DIR
+        
+        os.makedirs(path, exist_ok=True)
+        
         joblib.dump(self, f"{path}/{name}.joblib")
 
 
@@ -442,11 +453,12 @@ class OllamaPipeline(CustomPipeline):
 
         plt.title(f"Normalized Confusion Matrix for {model_name}")
         plt.show()
-    
+
+
     def predict(self, X):
         errors = []
         y_pred = []
-        
+
         for index, row in tqdm.tqdm(X.iterrows(), desc="Analyzing sentiment with Ollama"):
             try:
                 prompt = (
@@ -469,7 +481,6 @@ class OllamaPipeline(CustomPipeline):
             except Exception as e:
                 y_pred.append("error")
                 errors.append((index, str(e)))
-                
 
         for error in errors:
             print(f"Error for index {error[0]}: {error[1]}")

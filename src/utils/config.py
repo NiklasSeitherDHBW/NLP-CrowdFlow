@@ -7,7 +7,7 @@ SENTIMENTS = None
 FEATURES = ["text",]
 TARGET = "label"
 
-TRAIN_SET = "ieee_labeled.csv"
-CV_SET = "cryptonews_manual.csv"
+TRAIN_SET = "cryptonews_manual.csv"
+CV_SET = "ieee_labeled.csv"
 
 MODEL_DIR = "../res/models/"
