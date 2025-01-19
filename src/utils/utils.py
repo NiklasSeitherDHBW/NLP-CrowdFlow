@@ -2,6 +2,7 @@
 
 import copy
 import json
+import os
 import re
 import string
 
@@ -407,11 +408,15 @@ class CustomPipeline:
 
         return model.predict(X)
 
-    def dump(self, path, name=None):
+    def dump(self, path=None, name=None):
         """_summary_"""
         if name is None:
             name = self._model_name
-
+        if path is None:
+            path = config.MODEL_DIR
+        
+        os.makedirs(path, exist_ok=True)
+        
         joblib.dump(self, f"{path}/{name}.joblib")
 
 
