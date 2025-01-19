@@ -56,11 +56,19 @@ class Utils:
         return df_balanced
     
     @staticmethod
-    def load_data():
+    def load_data(drop_neutral=False):
         data_dir = "../res/prepared/"
         df = pd.read_csv(data_dir + config.TRAIN_SET)
         df_cv = pd.read_csv(data_dir + config.CV_SET)
+
+        df[config.TARGET] = df[config.TARGET].astype(str)
+
+        if drop_neutral:
+            df = df[df[config.TARGET] != "neutral"]
+            df_cv = df_cv[df_cv[config.TARGET] != "neutral"]
+
         config.SENTIMENTS = df[config.TARGET].unique().tolist()
+
         return df, df_cv
 
 
