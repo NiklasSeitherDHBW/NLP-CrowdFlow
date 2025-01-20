@@ -8,14 +8,20 @@ import streamlit as st
 import yfinance as yf
 from plotly.subplots import make_subplots
 
+
 CRYPTO_SYMBOLS = {"Bitcoin": "BTC-USD", "Ethereum": "ETH-USD", "Ripple": "XRP-USD"}
 SENTIMENTS = ["positive", "neutral", "negative"]
 SENTIMENT_COLORS = {"positive": "green", "neutral": "gray", "negative": "red"}
 
 
 def retrieve_news(selected_crypto, model):
+    """
+    Retrieve news articles for the selected cryptocurrency and predict sentiment
+    """
+    # Retrieve news articles for the selected cryptocurrency
     crypto_news = yf.Ticker(CRYPTO_SYMBOLS[selected_crypto]).get_news(1000)
 
+    # Create a DataFrame with the news articles
     df = pd.DataFrame(
         [
             {
@@ -28,18 +34,24 @@ def retrieve_news(selected_crypto, model):
         ]
     )
 
+    # Convert the date column to datetime format
     df["date"] = pd.to_datetime(df["date"])
 
+    # Predict sentiment for the news articles
     X_pred = df.drop(columns=["date"])
-
     df["sentiment"] = model.predict(X_pred, True)
 
     return df
 
 
 def display_news(news_df):
+    """
+    Display news articles with their sentiments in the Streamlit UI
+    """
+    # Sort the news articles by date in descending order
     df = news_df.sort_values("date", ascending=False)
 
+    # Display each news article with its title, sentiment, and text
     for _, row in df.iterrows():
         sentiment_color = SENTIMENT_COLORS[row["sentiment"]]
 
@@ -48,7 +60,7 @@ def display_news(news_df):
         if len(row["text"]) > 400:
             text += "..."
 
-        # Include a container for title and sentiment, making sure the sentiment does not overlap
+        # Display the news article with its title, text, date and sentiment
         st.markdown(
             f"""
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -69,7 +81,9 @@ def display_news(news_df):
 
 
 def get_frequency(start_date, end_date):
-    """Determine the frequency for grouping data based on the date range."""
+    """
+    Determine the frequency for grouping data based on the date range
+    """
     diff_days = (end_date - start_date).days
     if diff_days <= 1:
         return "h"
@@ -82,12 +96,17 @@ def get_frequency(start_date, end_date):
 
 
 def group_sentiment_data(df, start_date, end_date):
-    """Group data based on the selected date range."""
+    """
+    Group data based on the selected date range
+    """
+    # Filter the data based on the selected date range
     filtered_data = df[
         (df["date"] >= pd.Timestamp(start_date))
         & (df["date"] <= pd.Timestamp(end_date))
     ]
     filtered_data.set_index("date", inplace=True)
+
+    # Group the data based on the determined frequency
     freq = get_frequency(start_date, end_date)
     grouped = (
         filtered_data.groupby(pd.Grouper(level=0, freq=freq))["sentiment"]
@@ -98,7 +117,9 @@ def group_sentiment_data(df, start_date, end_date):
 
 
 def download_crypto_data(symbol, start_date, end_date):
-    """Fetch cryptocurrency data from Yahoo Finance."""
+    """
+    Fetch cryptocurrency data from Yahoo Finance
+    """
     if pd.Timedelta(end_date - start_date).days < 8:
         interval = "1h"
     elif pd.Timedelta(end_date - start_date).days < 60:
@@ -106,16 +127,18 @@ def download_crypto_data(symbol, start_date, end_date):
     else:
         interval = "1d"
 
+    # Fetch cryptocurrency data from Yahoo Finance
     data = (
         yf.Ticker(symbol)
         .history(interval=interval, start=start_date, end=end_date)
         .reset_index()
     )
 
-    date_col = "Datetime" if "Datetime" in data.columns else "Date"    
+    date_col = "Datetime" if "Datetime" in data.columns else "Date"  # Based on interval and date
     data[date_col] = pd.to_datetime(data[date_col])
     data.set_index(date_col, inplace=True)
 
+    # Group the data based on the determined frequency
     freq = get_frequency(start_date, end_date)
     data = data.groupby(pd.Grouper(level=0, freq=freq)).agg(
         {"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"}
@@ -125,7 +148,10 @@ def download_crypto_data(symbol, start_date, end_date):
 
 
 def plot_candlestick_with_separate_volume(data, min_date, max_date):
-    """Create a candlestick chart with a separate subplot for volume."""
+    """
+    Create a candlestick chart with a separate subplot for volume
+    """
+    # Create a subplot with shared x-axis
     fig = make_subplots(
         rows=2,
         cols=1,
@@ -134,6 +160,7 @@ def plot_candlestick_with_separate_volume(data, min_date, max_date):
         row_heights=[0.7, 0.3],
     )
 
+    # Add candlestick chart to the first row
     fig.add_trace(
         go.Candlestick(
             x=data.index,
@@ -147,6 +174,7 @@ def plot_candlestick_with_separate_volume(data, min_date, max_date):
         col=1,
     )
 
+    # Add volume chart to the second row
     fig.add_trace(
         go.Bar(
             x=data.index,
@@ -174,9 +202,12 @@ def plot_candlestick_with_separate_volume(data, min_date, max_date):
 
 
 def plot_sentiment(data, min_date, max_date):
-    """Create a stacked bar chart for sentiment analysis."""
+    """
+    Create a stacked bar chart for sentiment analysis
+    """
     fig = go.Figure()
 
+    # Add a bar for each sentiment
     for sentiment in SENTIMENTS:
         y_values = data[sentiment] if sentiment in data else [0] * len(data)
         fig.add_trace(
@@ -197,7 +228,7 @@ def plot_sentiment(data, min_date, max_date):
         xaxis_title="Date",
         yaxis=dict(
             title="Counts",
-            tickmode="linear" if max_y_value <= 10 else "auto",
+            tickmode="linear" if max_y_value <= 10 else "auto",  # nicer tick spacing
             tick0=0,
             dtick=1 if max_y_value <= 10 else None,
             tickformat=".0f",
@@ -211,7 +242,9 @@ def plot_sentiment(data, min_date, max_date):
 
 
 def apply_custom_styles():
-    """Apply custom CSS styles."""
+    """
+    Apply custom CSS styles
+    """
     st.markdown(
         """
         <style>
@@ -225,10 +258,12 @@ def apply_custom_styles():
 
 
 def main():
+    # Default app settings
     st.set_page_config(layout="wide")
     apply_custom_styles()
     st.title("\U0001f4c8 Cryptocurrency Analysis Dashboard")
 
+    # Create user crypto currenty and date input
     col1, col2 = st.columns(2)
     with col1:
         selected_crypto = st.selectbox(
@@ -245,19 +280,25 @@ def main():
         st.warning("Please select a valid date range.")
         return
 
+    # Convert to UTC to match the timezone of the data
     start_date, end_date = [
         pd.Timestamp(date).tz_localize("UTC") for date in date_range
     ]
 
+    # Download cryptocurrency performance data
     crypto_data = download_crypto_data(
         CRYPTO_SYMBOLS[selected_crypto], start_date, end_date
     )
 
+    # Load the dumped model and download necessary nltk packages
     model = joblib.load("res/models/nltk_tfidf_rf_1.joblib")
-    nltk.download("punkt")
-    nltk.download("stopwords")
-    nltk.download("punkt_tab")
+    nltk.download("punkt", quiet=True)
+    nltk.download("stopwords", quiet=True)
+    nltk.download("punkt_tab", quiet=True)
+    nltk.download("averaged_perceptron_tagger", quiet=True)
+    nltk.download('wordnet', quiet=True)
 
+    # Retrieve news articles and predict sentiment
     news_df = retrieve_news(selected_crypto, model)
     filtered_news = news_df[
         (news_df["date"] >= pd.Timestamp(start_date))
@@ -265,13 +306,16 @@ def main():
     ]
     sentiment_data = group_sentiment_data(filtered_news, start_date, end_date)
 
+    # Align the data indices
     common_index = crypto_data.index.union(sentiment_data.index)
     crypto_data = crypto_data.reindex(common_index, method=None)
     sentiment_data = sentiment_data.reindex(common_index, fill_value=0)
 
+    # Get the minimum and maximum date for the data
     min_date = min(crypto_data.index.min(), sentiment_data.index.min())
     max_date = max(crypto_data.index.max(), sentiment_data.index.max())
 
+    # Display the charts and news articles
     col3, col4 = st.columns([3, 2])
     with col3:
         st.subheader("Charts")
