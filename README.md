@@ -6,6 +6,16 @@ Gerade Cryptowährungen besitzen einen starken Zusammenhang zwischen der Stimmun
 
 Durch diese Verbindung von Informationsquellen lassen sich Muster besser identifizieren und zukünftige Veränderungen im Kurs mit einem größeren Vertrauen estimieren. 
 
+## Prerequisites
+Dieses Projekt wurde in einer Python-3.11.10-Umgebung entwickelt. Die benötigten Pakete können mit folgendem Befehl installiert werden:
+```bash
+pip install -r "requirements.txt
+```
+
+Zusätzlich wird ein vortrainiertes Word2Vec-Modell genutzt dass über folgenden Link heruntergladen werden kann: [GoogleNews-vectors-negative300](https://www.kaggle.com/datasets/adarshsng/googlenewsvectors/data). Dieses muss nach dem Download in den Ordner `res/models` abgelegt werden.
+
+Aufgrund der Dateigröße wurden lediglich die unverarbeiteten Datenästze im Ordner `res/input` abgelegt. Zum Teil werden die Datensätze aber auch erst zur Laufzeit (von Huggingface) heruntergalden und die verarbeitete Version abgespeichert. Bevor die Modelle trainiert und in der Anwendungsoberfläche verwendet werden können, muss das `src/data_preparation.ipynb` Notebook ausgeführt werden. Dieses erstellt die fertig prozssierten Datensätze und legt sie im Ordner `res/prepared` ab. Ist dieser Schritt abgeschlossen, kann in der Datei `src/utils/config.py` der gewünschte Trainings- sowie Cross-Validierungsdatensatz angegeben werden. Hiernach können die verschiedenen Notebooks zum Trainieren und Evaluieren der Modelle ausgeführt werden.
+
 ## Konzept
 
 CrowdFlow setzt sich aus den beiden Bestandteilen "Modell" und "Applikation" zusammen. 
