@@ -1,7 +1,6 @@
 ## Prerequisites
 This project was developed in a **Python 3.11.10** environment. Follow the steps below to set up the project and prepare the data:
 
-## Prerequisites
 ### 1. Install Dependencies
 
 Install the required Python packages using the following command:
