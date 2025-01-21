@@ -1,13 +1,4 @@
 ## Prerequisites
-This project was developed in a Python 3.11.10 environment. The required packages can be installed using the following command:
-```bash
-pip install -r "requirements.txt"
-```
-In addition, a predtrained Word2Vec-Model is used that can be obtained here: [GoogleNews-vectors-negative300](https://www.kaggle.com/datasets/adarshsng/googlenewsvectors/data). The file needs to be stored in the folder `res/models`.
-
-Due to the file size and git's limitations only the raw datasets are kept and can be found in `res/input`. Some of the datasets are obtained at runtime (from Huggingface) and the processed version will be saved in the `res/prepared` folder.
-Before training the models and using them in the user interface the data preparation notebook, located at `src/data_preparation.ipynb` needs to be executed. It generates the ready-to-use datasets for the model training. Those datasets will also be saved in the `res/prepared` folder. After this step is done, the desired training- and cross-validation-set can be specified in the file `src/utils/config.py` file. Now the notebooks for training the models can be executed.
-
 This project was developed in a **Python 3.11.10** environment. Follow the steps below to set up the project and prepare the data:
 
 ## Prerequisites
