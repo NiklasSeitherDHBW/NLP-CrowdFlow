@@ -1,11 +1,3 @@
-# CrowdFlow
-
-CrowdFlow ist eine Applikation, welche mittels Sentimentanalyse von Blogposts das Stimmungsbild verschiedener Cryptowährungen in definierbaren Zeiträumen klassifiziert und dieses zusammen mit dem jeweiligen Kurs visualisiert. 
-
-Gerade Cryptowährungen besitzen einen starken Zusammenhang zwischen der Stimmung der Investoren und dem Kursverlauf der Währung.
-
-Durch diese Verbindung von Informationsquellen lassen sich Muster besser identifizieren und zukünftige Veränderungen im Kurs mit einem größeren Vertrauen estimieren. 
-
 ## Prerequisites
 Dieses Projekt wurde in einer Python-3.11.10-Umgebung entwickelt. Die benötigten Pakete können mit folgendem Befehl installiert werden:
 ```bash
