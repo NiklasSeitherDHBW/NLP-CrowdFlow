@@ -52,6 +52,12 @@ src/utils/config.py
 
 After preparing the datasets and updating the configuration file, you can execute the provided notebooks to train the models. Ensure you have sufficient computational resources for this step as both, the ollama and the Word2Vec model rely heavily on computational resources.
 
+### 6. Streamlit
+After running the notebooks to train the models they can be loaded for the UI. The model which should be used can be specified the file `src/streamlit_app.py`. To start the frontend run the following command:
+```bash
+streamlit run ./src/streamlit_app.py
+```
+
 ## Application Architecture
 
 The application is divided into the two components visualized in the figure below. 
