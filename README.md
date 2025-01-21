@@ -12,7 +12,7 @@ Aufgrund der Dateigröße wurden lediglich die unverarbeiteten Datenästze im Or
 
 Analyzing the sentiment in blog posts offers investors additional valuable insights into the market and the people at a particular time. Since crypto currencies don't have an intrinsic value connected to the reality opposed to assets like company stocks the peoples sentiment can have drastic influence on their performance.
 
-To achieve visual analytics of the connection of the current sentiment towards specific crypto currencies and the peoples current sentiment towards them we build an application which retrieves the financial data as well as relevant news articles which are classified based on their sentiment.
+To achieve visual analytics of the connection of the current sentiment towards specific crypto currencies and the peoples current sentiment towards them we build an application called CrowdFlow which retrieves the financial data as well as relevant news articles which are classified based on their sentiment.
 
 ## Application Architecture
 
