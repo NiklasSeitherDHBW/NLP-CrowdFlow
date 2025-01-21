@@ -1,3 +1,9 @@
+## Use Case
+
+Analyzing the sentiment in blog posts offers investors additional valuable insights into the market and the people at a particular time. Since crypto currencies don't have an intrinsic value connected to the reality opposed to assets like company stocks the peoples sentiment can have drastic influence on their performance.
+
+To achieve visual analytics of the connection of the current sentiment towards specific crypto currencies and the peoples current sentiment towards them we build an application called CrowdFlow which retrieves the financial data as well as relevant news articles which are classified based on their sentiment.
+
 ## Prerequisites
 This project was developed in a **Python 3.11.10** environment. Follow the steps below to set up the project and prepare the data:
 
@@ -45,13 +51,6 @@ src/utils/config.py
 ### 5. Model Training
 
 After preparing the datasets and updating the configuration file, you can execute the provided notebooks to train the models. Ensure you have sufficient computational resources for this step as both, the ollama and the Word2Vec model rely heavily on computational resources.
-
-
-## Use Case
-
-Analyzing the sentiment in blog posts offers investors additional valuable insights into the market and the people at a particular time. Since crypto currencies don't have an intrinsic value connected to the reality opposed to assets like company stocks the peoples sentiment can have drastic influence on their performance.
-
-To achieve visual analytics of the connection of the current sentiment towards specific crypto currencies and the peoples current sentiment towards them we build an application called CrowdFlow which retrieves the financial data as well as relevant news articles which are classified based on their sentiment.
 
 ## Application Architecture
 
