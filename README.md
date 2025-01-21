@@ -11,7 +11,7 @@ pip install -r "requirements.txt"
 
 ### 2. Download the Pretrained Word2Vec Model
 
-A pretrained Word2Vec model is required for this project. You can obtain it from the following link: [GoogleNews-vectors-negative300](https://code.google.com/archive/p/word2vec/). After downloading, place the file in the folder:
+A pretrained Word2Vec model is required for this project. You can obtain it from the following link: [GoogleNews-vectors-negative300](https://www.kaggle.com/datasets/adarshsng/googlenewsvectors/code). After downloading, place the file in the folder:
 ```
 res/models
 ```
