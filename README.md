@@ -22,6 +22,8 @@ The first one is the frontend delivering the visual representation of a crypto c
 
 This data is retrieved and created by the backend consisting of corresponding API calls to Yahoo Finance for both the financial data as well as the last 200 crypto related news. While the financial data is simmply displayed, the news are delivered as input for a sklearn pipeline including the preprocessing steps and the model prediction.
 
+A more thorough description of the model training and its methodologie as well as the data used can be found in the file "documentation.pdf".
+
 <img src="https://raw.githubusercontent.com/NiklasSeitherDHBW/NLP-CrowdFlow/refs/heads/main/docs/NLP_Applikation.svg" alt="Application Architecture" width="50%">
 
 
