@@ -14,13 +14,16 @@ Install the required Python packages using the following command:
 pip install -r "requirements.txt"
 ```
 
-### 2. Download the Pretrained Word2Vec Model
+### 2. Download the Pretrained Models
 
 A pretrained Word2Vec model is required for this project. You can obtain it from the following link: [GoogleNews-vectors-negative300](https://www.kaggle.com/datasets/adarshsng/googlenewsvectors/data). After downloading, place the file in the folder:
 ```
 res/models
 ```
 > **Note**: If the `res/models` folder does not exist, create it manually.
+
+This project also requires the Ollama application to be installed and running on your system. You can download it from the official website: [Ollama Download](https://ollama.com/download). Follow the installation instructions provided on the website.
+> **Note:** Ensure the Ollama application is properly configured and running before executing the ollama notebook.
 
 ### 3. Dataset Preparation
 
