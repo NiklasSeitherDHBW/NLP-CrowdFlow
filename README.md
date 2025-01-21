@@ -1,12 +1,61 @@
 ## Prerequisites
-Dieses Projekt wurde in einer Python-3.11.10-Umgebung entwickelt. Die benötigten Pakete können mit folgendem Befehl installiert werden:
+This project was developed in a Python 3.11.10 environment. The required packages can be installed using the following command:
 ```bash
-pip install -r "requirements.txt
+pip install -r "requirements.txt"
+```
+In addition, a predtrained Word2Vec-Model is used that can be obtained here: [GoogleNews-vectors-negative300](https://www.kaggle.com/datasets/adarshsng/googlenewsvectors/data). The file needs to be stored in the folder `res/models`.
+
+Due to the file size and git's limitations only the raw datasets are kept and can be found in `res/input`. Some of the datasets are obtained at runtime (from Huggingface) and the processed version will be saved in the `res/prepared` folder.
+Before training the models and using them in the user interface the data preparation notebook, located at `src/data_preparation.ipynb` needs to be executed. It generates the ready-to-use datasets for the model training. Those datasets will also be saved in the `res/prepared` folder. After this step is done, the desired training- and cross-validation-set can be specified in the file `src/utils/config.py` file. Now the notebooks for training the models can be executed.
+
+This project was developed in a **Python 3.11.10** environment. Follow the steps below to set up the project and prepare the data:
+
+## Prerequisites
+### 1. Install Dependencies
+
+Install the required Python packages using the following command:
+```bash
+pip install -r "requirements.txt"
 ```
 
-Zusätzlich wird ein vortrainiertes Word2Vec-Modell genutzt dass über folgenden Link heruntergladen werden kann: [GoogleNews-vectors-negative300](https://www.kaggle.com/datasets/adarshsng/googlenewsvectors/data). Dieses muss nach dem Download in den Ordner `res/models` abgelegt werden.
+### 2. Download the Pretrained Word2Vec Model
 
-Aufgrund der Dateigröße wurden lediglich die unverarbeiteten Datenästze im Ordner `res/input` abgelegt. Zum Teil werden die Datensätze aber auch erst zur Laufzeit (von Huggingface) heruntergalden und die verarbeitete Version abgespeichert. Bevor die Modelle trainiert und in der Anwendungsoberfläche verwendet werden können, muss das `src/data_preparation.ipynb` Notebook ausgeführt werden. Dieses erstellt die fertig prozssierten Datensätze und legt sie im Ordner `res/prepared` ab. Ist dieser Schritt abgeschlossen, kann in der Datei `src/utils/config.py` der gewünschte Trainings- sowie Cross-Validierungsdatensatz angegeben werden. Hiernach können die verschiedenen Notebooks zum Trainieren und Evaluieren der Modelle ausgeführt werden.
+A pretrained Word2Vec model is required for this project. You can obtain it from the following link: [GoogleNews-vectors-negative300](https://code.google.com/archive/p/word2vec/). After downloading, place the file in the folder:
+```
+res/models
+```
+> **Note**: If the `res/models` folder does not exist, create it manually.
+
+### 3. Dataset Preparation
+
+The project relies on datasets stored in the following folder structure:
+```
+res/input        # Raw datasets
+res/prepared     # Processed datasets (generated during preparation)
+```
+
+#### Steps for Dataset Preparation:
+1. **Raw datasets**:
+   - Some datasets are downloaded automatically at runtime (e.g., from Huggingface). Others are already available in the `res/input` folder.
+
+2. **Data Preparation Notebook**:
+   - Run the notebook located at:
+     ```
+     src/data_preparation.ipynb
+     ```
+   - This notebook processes the raw datasets and generates ready-to-use datasets. These processed datasets will be saved in the `res/prepared` folder.
+
+### 4. Configure Training and Cross-Validation
+
+Once the data preparation is complete, specify the desired training and cross-validation settings in the following configuration file:
+```
+src/utils/config.py
+```
+
+### 5. Model Training
+
+After preparing the datasets and updating the configuration file, you can execute the provided notebooks to train the models. Ensure you have sufficient computational resources for this step as both, the ollama and the Word2Vec model rely heavily on computational resources.
+
 
 ## Use Case
 
